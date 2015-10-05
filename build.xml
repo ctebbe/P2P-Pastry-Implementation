@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="tebbe_cs555_A01" default="jar">
+
+    <property name="build" value="build"/>
+    <property name="dist" value="dist"/>
+    <property name="src" value="src"/>
+
+    <property name="controller.node" value="ControllerNode"/>
+    <property name="chunk.node" value="ChunkNode"/>
+    <property name="client.node" value="ClientNode"/>
+    <property name="package" value="cs555.tebbe.node"/>
+
+    <target name="clean">
+        <delete dir="${build}" />
+        <delete dir="${dist}" />
+    </target>
+
+    <target name="init">
+        <mkdir dir="${build}/classes"/>
+        <mkdir dir="${dist}" />
+    </target>
+
+    <target name="compile" depends="init" >
+        <javac destdir="${build}/classes" srcdir="${src}" includeantruntime="false">
+            <classpath>
+                <pathelement path="lib/reed-solomon-erasure-coding.jar"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="jar" depends="compile">
+        <jar destfile="${dist}\${ant.project.name}.jar" basedir="${build}/classes">
+            <manifest>
+                <attribute name="Main-Class" value="${package}.${controller.node}" />
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="controller" depends="jar">
+        <java classname="${package}.${controller.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar" />
+ <!--            <arg value="${arg0}"/>
+            <arg value="${arg0}"/> -->
+        </java>
+    </target>
+
+    <target name="node" depends="jar">
+        <java classname="${package}.${chunk.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar" />
+        </java>
+    </target>
+
+    <target name="node_args" depends="jar">
+        <java classname="${package}.${chunk.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar" />
+            <arg value="${arg0}"/>
+            <arg value="${arg1}"/>
+        </java>
+    </target>
+
+    <target name="client" depends="jar">
+        <java classname="${package}.${client.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar:lib/reed-solomon-erasure-coding.jar" />
+            <arg value="${arg0}"/>
+            <arg value="${arg1}"/>
+        </java>
+    </target>
+</project>
