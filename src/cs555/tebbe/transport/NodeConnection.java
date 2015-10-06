@@ -1,6 +1,5 @@
 package cs555.tebbe.transport;
 import cs555.tebbe.node.*;
-import cs555.tebbe.util.*;
 import cs555.tebbe.wireformats.*;
 import java.io.*;
 import java.net.*;
@@ -22,7 +21,7 @@ public class NodeConnection {
         this.sender = new TCPSender(sock);
         this.receiver = new TCPReceiverThread(node, sock);
 
-        node.registerConnection(this);
+        node.newConnectionMade(this);
         receiver.start();
     }
 
@@ -40,14 +39,5 @@ public class NodeConnection {
 
     public String getRemoteKey() {
         return socket.getRemoteSocketAddress().toString().substring(1);
-    }
-
-    public boolean equals(Object o) {
-        if(o == this) return true;
-        if(!(o instanceof NodeConnection)) return false;
-        NodeConnection nc = (NodeConnection) o;
-        System.out.println("this: "+this.getRemoteKey());
-        System.out.println("other: "+nc.getRemoteKey());
-        return this.getRemoteKey().equals(nc.getRemoteKey());
     }
 }

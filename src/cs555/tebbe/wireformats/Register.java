@@ -1,23 +1,14 @@
 package cs555.tebbe.wireformats;
 import cs555.tebbe.transport.*;
 import java.io.*;
-public class Register implements Event {
-
-    private Header header;
+public class Register extends Event {
 
     public Register(int protocol, NodeConnection connection) {
-        header = new Header(protocol, connection);
+        super(protocol, connection);
     }
 
-    public Register(byte[] marshalledBytes) throws IOException {
-        ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
-        DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
-
-        // header
-        this.header = Header.parseHeader(din);
-
-        bais.close();
-        din.close();
+    public Register(DataInputStream din) throws IOException {
+        super(din);
     }
 
     public byte[] getBytes() throws IOException {
@@ -26,8 +17,7 @@ public class Register implements Event {
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baos));
 
         // header
-        byte[] headerBytes = header.getBytes();
-        dout.write(headerBytes);
+        dout.write(getHeader().getBytes());
 
         // clean up
         dout.flush();
@@ -35,13 +25,5 @@ public class Register implements Event {
         baos.close();
         dout.close();
         return marshalledBytes;
-    }
-
-    public int getType() {
-        return this.header.getType();
-    }
-
-    public String getSenderKey() {
-        return this.header.getSenderKey();
     }
 }

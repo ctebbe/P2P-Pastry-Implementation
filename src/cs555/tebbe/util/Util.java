@@ -7,24 +7,38 @@ import java.util.*;
 
 public class Util {
 
-    /*
-        return a 16 digit checksum
-     */
-    public static String getCheckSumSHA1(byte[] bytes) {
-        try {
-            MessageDigest hasher = MessageDigest.getInstance("SHA-1");
-            hasher.reset();
-            hasher.update(bytes);
-            return new BigInteger(1, hasher.digest()).toString(16);
-
-        } catch (NoSuchAlgorithmException e) { e.printStackTrace(); }
-        return "";
+    public static String convertBytesToHex(byte[] buf) {
+        StringBuffer strBuf = new StringBuffer();
+        for (int i = 0; i < buf.length; i++) {
+            int byteValue = (int) buf[i] & 0xff;
+            if (byteValue <= 15) {
+                strBuf.append("0");
+            }
+            strBuf.append(Integer.toString(byteValue, 16));
+        }
+        return strBuf.toString();
     }
 
-    // strips away the IP in the key format
+    public static byte[] convertHexToBytes(String hexString) {
+        int size = hexString.length();
+        byte[] buf = new byte[size / 2];
+        int j = 0;
+        for (int i = 0; i < size; i++) {
+            String a = hexString.substring(i, i + 2);
+            int valA = Integer.parseInt(a, 16);
+            i++;
+            buf[j] = (byte) valA;
+            j++;
+        }
+        return buf;
+    }
+
+    // strips away the port in the key format host:port
     public static String removePort(String key) {
         return key.substring(0, key.indexOf(":"));
     }
+
+    // strips away the IP address in the key format host:port
     public static int removeIPAddress(String key) {
         return Integer.parseInt(key.substring(key.indexOf(":") + 1));
     }
@@ -33,17 +47,8 @@ public class Util {
         return (int)(Math.random() * ((max-min) + 1) + min);
     }
 
-    public static int generateRandomNumber() {
-        return new Random().nextInt();
-    }
-
-    public static String getOtherReplica(ChunkReplicaInformation replicaInformation, String failedNode) {
-
-        List<String> replicas = Arrays.asList(replicaInformation.getReplicaChunkNodes());
-        Collections.reverse(replicas);
-        for(String replica : replicas) {
-            if(!replica.equals(failedNode))
-                return replica;
-        } return null;
+    public static void main(String[] args) {
+        String s = "TEST STRING 0";
+        System.out.println(Util.convertBytesToHex(s.getBytes()));
     }
 }
