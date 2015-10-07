@@ -1,12 +1,15 @@
 package cs555.tebbe.node;
+
+import cs555.tebbe.data.PeerNodeData;
 import cs555.tebbe.transport.NodeConnection;
 import cs555.tebbe.transport.TCPServerThread;
-import cs555.tebbe.wireformats.Event;
-import cs555.tebbe.wireformats.Protocol;
-import cs555.tebbe.wireformats.Register;
+import cs555.tebbe.util.Util;
+import cs555.tebbe.wireformats.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -17,41 +20,115 @@ public class DiscoveryNode implements Node {
 
     private TCPServerThread serverThread = null;                            // listens for incoming connections
     private ConcurrentHashMap<String, NodeConnection> bufferMap    = null;  // buffers incoming unregistered connections
+    private ConcurrentHashMap<String, PeerNodeData> peerMap    = null;    // registered peer nodes
+    private Set<String> identifierSet = new HashSet<>();
 
     //private ConcurrentHashMap<String, LiveChunkNodeData> chunkNodeMap = null;       // holds registered chunk nodes
 
     public DiscoveryNode(int port) {
         try {
             bufferMap = new ConcurrentHashMap<>();
+            peerMap = new ConcurrentHashMap<>();
 
             serverThread = new TCPServerThread(this, new ServerSocket(port));
             serverThread.start();
+
+            run();
         } catch(IOException ioe) {
             display("IOException on DiscoveryNode:"+ioe.toString());
+        }
+    }
+
+    private void run() {
+        Scanner keyboard = new Scanner(System.in);
+        String input = keyboard.nextLine();
+        while(input != null) {
+            if(input.contains("list-nodes")) {
+                printListNodes();
+            }
+            input = keyboard.nextLine();
+        }
+    }
+
+    private void printListNodes() {
+        List<PeerNodeData> nodes = new ArrayList<>(peerMap.values());
+        for(PeerNodeData node : nodes) {
+            System.out.println(node);
         }
     }
 
     public synchronized void onEvent(Event event) {
         switch(event.getType()) {
             case Protocol.REGISTER:
-                registerPeerNode((Register) event);
+                try {
+                    registerPeerNode((Register) event);
+                    System.out.println("\n* New peer node registered:" + ((Register) event).getHeader().getSenderKey());
+                } catch (IOException e) {
+                    System.out.println("IOE throws processing register event.");
+                    e.printStackTrace();
+                }
+                break;
+            case Protocol.RANDOM_PEER_REQ:
+                try {
+                    processRandomPeerRequest((RandomPeerNodeRequest) event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             default:
                 display("unknown event type:"+event.getType());
         }
     }
 
-    private void registerPeerNode(Register event) {
+    private void processRandomPeerRequest(RandomPeerNodeRequest event) throws IOException {
+        NodeConnection connection = bufferMap.get(event.getHeader().getSenderKey());
+        connection.sendEvent(EventFactory.buildRandomPeerResponseEvent(connection, getRandomPeerNode()));
+    }
+
+    private void registerPeerNode(Register event) throws IOException {
+        // generate or set new node ID and ensure no collisions
+        String id;
+        if(!event.getNodeIDRequest().isEmpty() && !identifierSet.contains(event.getNodeIDRequest())) {
+            id = event.getNodeIDRequest();
+        } else {
+            do {
+                id = Util.getFormattedHexID(new Timestamp(new Date().getTime()).toString().getBytes()); // 4-digit Hex ID
+            } while(identifierSet.contains(id)); // continue until an id not already claimed is generated
+        }
+        identifierSet.add(id); // add the new node ID to claimed IDs
+
+        // get random peer node
+        String randomPeer = "";
+        if(peerMap.size() > 0) {
+            Random random = new Random();
+            List<String> keys = new ArrayList(peerMap.keySet());
+            String randKey = keys.get(random.nextInt(keys.size()));
+            randomPeer = Util.removePort(peerMap.get(randKey).connection.getRemoteKey());
+        }
+
+        // save new peer node
         String key = event.getHeader().getSenderKey();
-        System.out.println("Registering Peer Node: " + key);
-        //chunkNodeMap.put(key, new LiveChunkNodeData(bufferMap.get(key)));
+        NodeConnection connection = bufferMap.remove(key);
+        peerMap.put(key, new PeerNodeData(connection, id));
+
+        // send response
+        connection.sendEvent(EventFactory.buildRegisterResponseEvent(connection, id, randomPeer));
+    }
+
+    private String getRandomPeerNode() {
+        if(peerMap.size() > 0) {
+            Random random = new Random();
+            List<String> keys = new ArrayList(peerMap.keySet());
+            String randKey = keys.get(random.nextInt(keys.size()));
+            return Util.removePort(peerMap.get(randKey).connection.getRemoteKey());
+        }
+        return "";
     }
 
     public synchronized void newConnectionMade(NodeConnection connection) {
         bufferMap.put(connection.getRemoteKey(), connection);
     }
 
-    @Override
     public synchronized void lostConnection(String disconnectedConnectionKey) {
         System.out.println("Lost connection:" + disconnectedConnectionKey);
     }

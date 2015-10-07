@@ -1,22 +1,26 @@
 package cs555.tebbe.wireformats;
-import cs555.tebbe.transport.*;
+
+import cs555.tebbe.transport.NodeConnection;
+
 import java.io.*;
-public class Register implements Event {
+
+/**
+ * Created by ctebbe
+ */
+public class RegisterResponse implements Event {
 
     private final Header header;
-    private final String nodeIdentifierRequest;
+    public final String assignedID;
 
-    public String getNodeIDRequest() {
-        return nodeIdentifierRequest;
-    }
+    public final String nodeIP;
 
-    protected Register(int protocol, NodeConnection connection, String id) {
+    protected RegisterResponse(int protocol, NodeConnection connection, String id, String nodeIP) {
         header = new Header(protocol, connection);
-        if(id==null) nodeIdentifierRequest = "";
-        else  nodeIdentifierRequest = id;
+        assignedID = id;
+        this.nodeIP = nodeIP;
     }
 
-    protected Register(byte[] marshalledBytes) throws IOException {
+    protected RegisterResponse(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
@@ -27,7 +31,13 @@ public class Register implements Event {
         int idLen = din.readInt();
         byte[] idBytes = new byte[idLen];
         din.readFully(idBytes);
-        nodeIdentifierRequest = new String(idBytes);
+        assignedID = new String(idBytes);
+
+        // node IP
+        int ipLen = din.readInt();
+        byte[] ipBytes = new byte[ipLen];
+        din.readFully(ipBytes);
+        nodeIP = new String(ipBytes);
 
         bais.close();
         din.close();
@@ -42,9 +52,14 @@ public class Register implements Event {
         dout.write(header.getBytes());
 
         // ID
-        byte[] idBytes = nodeIdentifierRequest.getBytes();
+        byte[] idBytes = assignedID.getBytes();
         dout.writeInt(idBytes.length);
         dout.write(idBytes);
+
+        // IP
+        byte[] ipBytes = nodeIP.getBytes();
+        dout.writeInt(ipBytes.length);
+        dout.write(ipBytes);
 
         // clean up
         dout.flush();

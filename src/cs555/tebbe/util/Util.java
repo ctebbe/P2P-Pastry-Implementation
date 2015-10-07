@@ -1,11 +1,19 @@
 package cs555.tebbe.util;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.sql.Timestamp;
+import java.util.Date;
 
 public class Util {
+
+    public static int getAbsoluteHexDifference(String h1, String h2) {
+        return Math.abs(Integer.parseInt(h1, 16) - Integer.parseInt(h2, 16));
+    }
+
+    public static String getFormattedHexID(byte[] buf) {
+        String hex = convertBytesToHex(buf);
+        int len = hex.length();
+        return hex.substring(len-4, len); // get last 4 hex digits
+    }
 
     public static String convertBytesToHex(byte[] buf) {
         StringBuffer strBuf = new StringBuffer();
@@ -35,6 +43,7 @@ public class Util {
 
     // strips away the port in the key format host:port
     public static String removePort(String key) {
+        if(!key.contains(":")) return key;
         return key.substring(0, key.indexOf(":"));
     }
 
@@ -47,8 +56,15 @@ public class Util {
         return (int)(Math.random() * ((max-min) + 1) + min);
     }
 
-    public static void main(String[] args) {
-        String s = "TEST STRING 0";
-        System.out.println(Util.convertBytesToHex(s.getBytes()));
+    public static void main(String[] args) throws InterruptedException {
+        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
+        Thread.sleep(100);
+        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
+        Thread.sleep(1000);
+        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
+        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
+        System.out.println(Util.convertBytesToHex("hello".getBytes()));
+
+
     }
 }

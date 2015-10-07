@@ -1,33 +1,26 @@
 package cs555.tebbe.wireformats;
-import cs555.tebbe.transport.*;
+
+import cs555.tebbe.transport.NodeConnection;
+
 import java.io.*;
-public class Register implements Event {
+
+/**
+ * Created by ctebbe
+ */
+public class RandomPeerNodeRequest implements Event {
 
     private final Header header;
-    private final String nodeIdentifierRequest;
 
-    public String getNodeIDRequest() {
-        return nodeIdentifierRequest;
-    }
-
-    protected Register(int protocol, NodeConnection connection, String id) {
+    protected RandomPeerNodeRequest(int protocol, NodeConnection connection) {
         header = new Header(protocol, connection);
-        if(id==null) nodeIdentifierRequest = "";
-        else  nodeIdentifierRequest = id;
     }
 
-    protected Register(byte[] marshalledBytes) throws IOException {
+    protected RandomPeerNodeRequest(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
         // header
         this.header = Header.parseHeader(din);
-
-        // ID
-        int idLen = din.readInt();
-        byte[] idBytes = new byte[idLen];
-        din.readFully(idBytes);
-        nodeIdentifierRequest = new String(idBytes);
 
         bais.close();
         din.close();
@@ -40,11 +33,6 @@ public class Register implements Event {
 
         // header
         dout.write(header.getBytes());
-
-        // ID
-        byte[] idBytes = nodeIdentifierRequest.getBytes();
-        dout.writeInt(idBytes.length);
-        dout.write(idBytes);
 
         // clean up
         dout.flush();

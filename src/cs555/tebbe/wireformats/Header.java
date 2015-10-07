@@ -1,12 +1,13 @@
 package cs555.tebbe.wireformats;
-import cs555.tebbe.transport.NodeConnection;
-
+import cs555.tebbe.transport.*;
+import java.util.*;
 import java.io.*;
-public class Header {
+import java.net.*;
+public class Header implements Event {
 
-    private final int protocol;
-    private final String senderKey;
-    private final String receiverKey;
+    private int protocol;
+    private String senderKey;
+    private String receiverKey;
 
     public Header(int protocol, NodeConnection connection) {
         this.protocol = protocol;
@@ -47,12 +48,10 @@ public class Header {
 
         // type
         dout.writeInt(getType());
-
         // sender
         byte[] senderBytes = getSenderKey().getBytes();
         dout.writeInt(senderBytes.length);
         dout.write(senderBytes);
-
         // receiver
         byte[] receiverBytes = getReceiverKey().getBytes();
         dout.writeInt(receiverBytes.length);
@@ -66,6 +65,10 @@ public class Header {
         return marshalledBytes;
     }
 
+    public int getType() {
+        return this.protocol;
+    }
+
     public String getSenderKey() {
         return this.senderKey;
     }
@@ -74,7 +77,7 @@ public class Header {
         return this.receiverKey;
     }
 
-    public int getType() {
-        return this.protocol;
+    @Override public String toString() {
+        return "["+Protocol.getProtocolString(getType()) + " SenderKey:"+getSenderKey() + " RecKey:"+getReceiverKey() +"]";
     }
 }

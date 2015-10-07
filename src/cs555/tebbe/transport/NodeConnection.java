@@ -34,10 +34,12 @@ public class NodeConnection {
     }
 
     public String getLocalKey() {
-        return socket.getLocalSocketAddress().toString().substring(1);
+        String key = socket.getLocalSocketAddress().toString();
+        return key.substring(key.indexOf('/')+1);
     }
 
     public String getRemoteKey() {
-        return socket.getRemoteSocketAddress().toString().substring(1);
+        String key = socket.getRemoteSocketAddress().toString();
+        return key.substring(key.indexOf('/')+1);
     }
 }

@@ -1,33 +1,34 @@
 package cs555.tebbe.wireformats;
-import cs555.tebbe.transport.*;
+
+import cs555.tebbe.transport.NodeConnection;
+
 import java.io.*;
-public class Register implements Event {
+
+/**
+ * Created by ctebbe
+ */
+public class RandomPeerNodeResponse implements Event {
 
     private final Header header;
-    private final String nodeIdentifierRequest;
+    public final String nodeIP;
 
-    public String getNodeIDRequest() {
-        return nodeIdentifierRequest;
-    }
-
-    protected Register(int protocol, NodeConnection connection, String id) {
+    protected RandomPeerNodeResponse(int protocol, NodeConnection connection, String nodeIP) {
         header = new Header(protocol, connection);
-        if(id==null) nodeIdentifierRequest = "";
-        else  nodeIdentifierRequest = id;
+        this.nodeIP = nodeIP;
     }
 
-    protected Register(byte[] marshalledBytes) throws IOException {
+    protected RandomPeerNodeResponse(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
         // header
         this.header = Header.parseHeader(din);
 
-        // ID
-        int idLen = din.readInt();
-        byte[] idBytes = new byte[idLen];
-        din.readFully(idBytes);
-        nodeIdentifierRequest = new String(idBytes);
+        // node IP
+        int ipLen = din.readInt();
+        byte[] ipBytes = new byte[ipLen];
+        din.readFully(ipBytes);
+        nodeIP = new String(ipBytes);
 
         bais.close();
         din.close();
@@ -41,10 +42,10 @@ public class Register implements Event {
         // header
         dout.write(header.getBytes());
 
-        // ID
-        byte[] idBytes = nodeIdentifierRequest.getBytes();
-        dout.writeInt(idBytes.length);
-        dout.write(idBytes);
+        // IP
+        byte[] ipBytes = nodeIP.getBytes();
+        dout.writeInt(ipBytes.length);
+        dout.write(ipBytes);
 
         // clean up
         dout.flush();

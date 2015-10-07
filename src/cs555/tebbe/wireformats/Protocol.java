@@ -4,6 +4,13 @@ public class Protocol {
     // event types
     public static final int NOTYPE                  = -101;
     public static final int REGISTER                = 100;
+    public static final int REGISTER_RESP           = 101;
+
+    public static final int JOIN_REQ                = 102;
+    public static final int JOIN_RESP               = 103;
+
+    public static final int RANDOM_PEER_REQ         = 104;
+    public static final int RANDOM_PEER_RESP        = 105;
 
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;

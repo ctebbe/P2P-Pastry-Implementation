@@ -5,9 +5,9 @@
     <property name="dist" value="dist"/>
     <property name="src" value="src"/>
 
-    <property name="controller.node" value="ControllerNode"/>
-    <property name="chunk.node" value="ChunkNode"/>
-    <property name="client.node" value="ClientNode"/>
+    <property name="discovery.node" value="DiscoveryNode"/>
+    <property name="peer.node" value="PeerNode"/>
+    <property name="data.node" value="DataStoreNode"/>
     <property name="package" value="cs555.tebbe.node"/>
 
     <target name="clean">
@@ -22,47 +22,39 @@
 
     <target name="compile" depends="init" >
         <javac destdir="${build}/classes" srcdir="${src}" includeantruntime="false">
+            <!--
             <classpath>
                 <pathelement path="lib/reed-solomon-erasure-coding.jar"/>
             </classpath>
+            -->
         </javac>
     </target>
 
     <target name="jar" depends="compile">
         <jar destfile="${dist}\${ant.project.name}.jar" basedir="${build}/classes">
             <manifest>
-                <attribute name="Main-Class" value="${package}.${controller.node}" />
+                <attribute name="Main-Class" value="${package}.${discovery.node}" />
             </manifest>
         </jar>
     </target>
 
-    <target name="controller" depends="jar">
-        <java classname="${package}.${controller.node}" fork="true">
-            <classpath path="${dist}\${ant.project.name}.jar" />
- <!--            <arg value="${arg0}"/>
-            <arg value="${arg0}"/> -->
-        </java>
-    </target>
-
-    <target name="node" depends="jar">
-        <java classname="${package}.${chunk.node}" fork="true">
+    <target name="discovery" depends="jar">
+        <java classname="${package}.${discovery.node}" fork="true">
             <classpath path="${dist}\${ant.project.name}.jar" />
         </java>
     </target>
 
-    <target name="node_args" depends="jar">
-        <java classname="${package}.${chunk.node}" fork="true">
+    <target name="peer" depends="jar">
+        <java classname="${package}.${peer.node}" fork="true">
             <classpath path="${dist}\${ant.project.name}.jar" />
             <arg value="${arg0}"/>
-            <arg value="${arg1}"/>
         </java>
     </target>
 
-    <target name="client" depends="jar">
-        <java classname="${package}.${client.node}" fork="true">
-            <classpath path="${dist}\${ant.project.name}.jar:lib/reed-solomon-erasure-coding.jar" />
+    <target name="data" depends="jar">
+        <java classname="${package}.${data.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar" />
             <arg value="${arg0}"/>
-            <arg value="${arg1}"/>
         </java>
     </target>
 </project>
