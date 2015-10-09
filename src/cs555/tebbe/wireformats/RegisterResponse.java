@@ -11,13 +11,13 @@ public class RegisterResponse implements Event {
 
     private final Header header;
     public final String assignedID;
-
-    public final String nodeIP;
+    //public final boolean success;
+    public final String randomNodeIP;
 
     protected RegisterResponse(int protocol, NodeConnection connection, String id, String nodeIP) {
         header = new Header(protocol, connection);
         assignedID = id;
-        this.nodeIP = nodeIP;
+        this.randomNodeIP = nodeIP;
     }
 
     protected RegisterResponse(byte[] marshalledBytes) throws IOException {
@@ -27,7 +27,7 @@ public class RegisterResponse implements Event {
         // header
         this.header = Header.parseHeader(din);
 
-        // ID
+        // targetNodeID
         int idLen = din.readInt();
         byte[] idBytes = new byte[idLen];
         din.readFully(idBytes);
@@ -37,7 +37,7 @@ public class RegisterResponse implements Event {
         int ipLen = din.readInt();
         byte[] ipBytes = new byte[ipLen];
         din.readFully(ipBytes);
-        nodeIP = new String(ipBytes);
+        randomNodeIP = new String(ipBytes);
 
         bais.close();
         din.close();
@@ -51,13 +51,13 @@ public class RegisterResponse implements Event {
         // header
         dout.write(header.getBytes());
 
-        // ID
+        // targetNodeID
         byte[] idBytes = assignedID.getBytes();
         dout.writeInt(idBytes.length);
         dout.write(idBytes);
 
         // IP
-        byte[] ipBytes = nodeIP.getBytes();
+        byte[] ipBytes = randomNodeIP.getBytes();
         dout.writeInt(ipBytes.length);
         dout.write(ipBytes);
 

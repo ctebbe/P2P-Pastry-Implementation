@@ -13,7 +13,7 @@ public class JoinResponse implements Event {
 
     private final Header header;
 
-    public final String ID;
+    public final String targetNodeID;
 
     public final String lowLeafIP;
     public final String lowLeafIdentifier;
@@ -26,7 +26,7 @@ public class JoinResponse implements Event {
     protected JoinResponse(int protocol, NodeConnection connection, String ID, PeerNodeData lowLeaf, PeerNodeData highLeaf, String[] prevRoute) {
         header = new Header(protocol, connection);
 
-        this.ID = ID;
+        this.targetNodeID = ID;
 
         if(lowLeaf == null) {
             this.lowLeafIP = "";
@@ -57,11 +57,11 @@ public class JoinResponse implements Event {
         // header
         this.header = Header.parseHeader(din);
 
-        // ID
+        // targetNodeID
         int idLen = din.readInt();
         byte[] idBytes = new byte[idLen];
         din.readFully(idBytes);
-        ID = new String(idBytes);
+        targetNodeID = new String(idBytes);
 
         // lowLeafIP IP
         int lowLen = din.readInt();
@@ -69,7 +69,7 @@ public class JoinResponse implements Event {
         din.readFully(lowBytes);
         lowLeafIP = new String(lowBytes);
 
-        // lowLeafIP ID
+        // lowLeafIP targetNodeID
         int lowIDLen = din.readInt();
         byte[] lowIDBytes = new byte[lowIDLen];
         din.readFully(lowIDBytes);
@@ -81,7 +81,7 @@ public class JoinResponse implements Event {
         din.readFully(highBytes);
         highLeafIP = new String(highBytes);
 
-        // highLeafIP ID
+        // highLeafIP targetNodeID
         int highIDLen = din.readInt();
         byte[] highIDBytes = new byte[highIDLen];
         din.readFully(highIDBytes);
@@ -108,8 +108,8 @@ public class JoinResponse implements Event {
         // header
         dout.write(header.getBytes());
 
-        // ID
-        byte[] idBytes = ID.getBytes();
+        // targetNodeID
+        byte[] idBytes = targetNodeID.getBytes();
         dout.writeInt(idBytes.length);
         dout.write(idBytes);
 

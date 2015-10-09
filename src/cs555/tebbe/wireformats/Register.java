@@ -23,7 +23,7 @@ public class Register implements Event {
         // header
         this.header = Header.parseHeader(din);
 
-        // ID
+        // targetNodeID
         int idLen = din.readInt();
         byte[] idBytes = new byte[idLen];
         din.readFully(idBytes);
@@ -41,7 +41,7 @@ public class Register implements Event {
         // header
         dout.write(header.getBytes());
 
-        // ID
+        // targetNodeID
         byte[] idBytes = nodeIdentifierRequest.getBytes();
         dout.writeInt(idBytes.length);
         dout.write(idBytes);

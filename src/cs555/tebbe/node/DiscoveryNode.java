@@ -86,16 +86,16 @@ public class DiscoveryNode implements Node {
     }
 
     private void registerPeerNode(Register event) throws IOException {
-        // generate or set new node ID and ensure no collisions
+        // generate or set new node targetNodeID and ensure no collisions
         String id;
         if(!event.getNodeIDRequest().isEmpty() && !identifierSet.contains(event.getNodeIDRequest())) {
             id = event.getNodeIDRequest();
         } else {
             do {
-                id = Util.getFormattedHexID(new Timestamp(new Date().getTime()).toString().getBytes()); // 4-digit Hex ID
+                id = Util.getFormattedHexID(new Timestamp(new Date().getTime()).toString().getBytes()); // 4-digit Hex targetNodeID
             } while(identifierSet.contains(id)); // continue until an id not already claimed is generated
         }
-        identifierSet.add(id); // add the new node ID to claimed IDs
+        identifierSet.add(id); // add the new node targetNodeID to claimed IDs
 
         // get random peer node
         String randomPeer = "";

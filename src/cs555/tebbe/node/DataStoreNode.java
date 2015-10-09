@@ -9,7 +9,6 @@ import cs555.tebbe.wireformats.Protocol;
 import cs555.tebbe.wireformats.RandomPeerNodeResponse;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
@@ -48,13 +47,8 @@ public class DataStoreNode implements Node {
     }
 
     private void sendStoreDataRequest(File toStore) throws IOException {
-        FileInputStream fis = new FileInputStream(toStore);
-        byte[] cachedBytes = new byte[(int)toStore.length()];
-        fis.read(cachedBytes);
-        fis.close();
-
-        String dataID = Util.getFormattedHexID(cachedBytes);
-        System.out.println("Data ID to store:" + dataID);
+        String dataID = Util.getFormattedHexID(toStore.getName().getBytes());
+        System.out.println("Data targetNodeID to store:" + dataID);
         _DiscoveryNode.sendEvent(EventFactory.buildRandomPeerRequestEvent(_DiscoveryNode));
     }
 
