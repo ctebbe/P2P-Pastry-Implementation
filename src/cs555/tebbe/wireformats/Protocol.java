@@ -3,11 +3,12 @@ public class Protocol {
 
     // event types
     public static final int NOTYPE                  = -101;
-    public static final int REGISTER                = 100;
-    public static final int REGISTER_RESP           = 101;
+    public static final int REGISTER_REQ = 100;
+    public static final int REGISTER_ACK = 101;
 
     public static final int JOIN_REQ                = 102;
     public static final int JOIN_RESP               = 103;
+    public static final int JOIN_COMP               = 113;
 
     public static final int RANDOM_PEER_REQ         = 104;
     public static final int RANDOM_PEER_RESP        = 105;
@@ -20,7 +21,8 @@ public class Protocol {
     public static String getProtocolString(int protocol) {
         switch(protocol) {
             case NOTYPE:                return "NOTYPE";
-            case REGISTER:              return "REGISTER";
+            case REGISTER_REQ:              return "REGISTER_REQ";
+            case JOIN_COMP:              return "JOIN COMPLETE";
             default:                    return "UNKNOWN";
         }
     }

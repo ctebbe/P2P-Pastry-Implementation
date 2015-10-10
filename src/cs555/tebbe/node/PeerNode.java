@@ -1,6 +1,6 @@
 package cs555.tebbe.node;
 import cs555.tebbe.data.PeerNodeData;
-import cs555.tebbe.diagnostics.Logger;
+import cs555.tebbe.diagnostics.Log;
 import cs555.tebbe.routing.PeerNodeRouteHandler;
 import cs555.tebbe.transport.*;
 import cs555.tebbe.util.Util;
@@ -20,9 +20,12 @@ public class PeerNode implements Node {
     private TCPServerThread serverThread = null;                                        // listens for incoming nodes
     private Map<String, NodeConnection> connectionsMap = new ConcurrentHashMap<>();     // buffers all current connections for reuse
     private PeerNodeRouteHandler router;                                                // maintains leafset and routing table & related logic
-    private Logger logger = new Logger();                                               // logs events and prints diagnostic messages
+    private Log logger = new Log();                                               // logs events and prints diagnostic messages
+
+    private final boolean isCustomID;
 
     public PeerNode(String host, int port, String id) {
+        isCustomID = id != null;
         try {
             serverThread = new TCPServerThread(this, new ServerSocket(DEFAULT_SERVER_PORT));
             serverThread.start();
@@ -33,6 +36,8 @@ public class PeerNode implements Node {
 
         try {
             _DiscoveryNode = ConnectionFactory.getInstance().buildConnection(this, new Socket(host, port));
+            if(!isCustomID)
+                id = Util.getTimestampHexID();
             _DiscoveryNode.sendEvent(EventFactory.buildRegisterEvent(_DiscoveryNode, id));
         } catch(IOException ioe) {
             System.out.println("IOException thrown contacting DiscoveryNode:"+ioe.getMessage());
@@ -42,9 +47,9 @@ public class PeerNode implements Node {
 
     public synchronized void onEvent(Event event){
         switch(event.getType()) {
-            case Protocol.REGISTER_RESP:
+            case Protocol.REGISTER_ACK:
                 try {
-                    processRegisterResponse((RegisterResponse) event);
+                    processRegisterResponse((RegisterAck) event);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -67,13 +72,13 @@ public class PeerNode implements Node {
     private void processJoinResponse(JoinResponse event) {
         if(event.lowLeafIP.isEmpty() && event.highLeafIP.isEmpty()) { // no leafset, set each other as leaf set
             NodeConnection leafSetConnection = getNodeConnection(event.getHeader().getSenderKey());
-            router.lowLeaf = new PeerNodeData(leafSetConnection, event.targetNodeID);
-            router.highLeaf = new PeerNodeData(leafSetConnection, event.targetNodeID);
+            router.setLowLeaf(new PeerNodeData(leafSetConnection, event.targetNodeID));
+            router.setHighLeaf(new PeerNodeData(leafSetConnection, event.targetNodeID));
         }
 
         System.out.println("\n* New leaf set:");
-        System.out.println("low leaf:" + router.lowLeaf.ID);
-        System.out.println("high leaf:" + router.highLeaf.ID);
+        System.out.println("low leaf:" + router.getLowLeaf().ID);
+        System.out.println("high leaf:" + router.getHighLeaf().ID);
         System.out.println("route:");
         event.printRouteTrace();
     }
@@ -93,15 +98,15 @@ public class PeerNode implements Node {
     private void processJoinRequest(JoinRequest event) throws IOException {
 
         boolean sendJoinResponse = false;
-        if(router.lowLeaf == null && router.highLeaf == null) {                     // first connection of the overlay, no neighbors yet
+        if(router.getLowLeaf() == null && router.getHighLeaf() == null) {                     // first connection of the overlay, no neighbors yet
             sendJoinResponse = true;
-        } else if(router.lowLeaf.ID.equals(router.highLeaf.ID)) {                   // currently two nodes in overlay, joining node is in this leafset
+        } else if(router.getLowLeaf().ID.equals(router.getHighLeaf().ID)) {                   // currently two nodes in overlay, joining node is in this leafset
             sendJoinResponse = true;
         }
 
         if(sendJoinResponse) { // send leafset to the query node
             NodeConnection newNode = getNodeConnection(event.getQueryNodeIP());
-            newNode.sendEvent(EventFactory.buildJoinResponseEvent(newNode, router._Identifier, router.lowLeaf, router.highLeaf, event.getRoute()));
+            newNode.sendEvent(EventFactory.buildJoinResponseEvent(newNode, router._Identifier, router.getLowLeaf(), router.getHighLeaf(), event.getRoute()));
         }
 
         System.out.println();
@@ -111,17 +116,23 @@ public class PeerNode implements Node {
         System.out.println();
     }
 
-    private void processRegisterResponse(RegisterResponse event) throws IOException {
+    private void processRegisterResponse(RegisterAck event) throws IOException {
+        if(event.success) { // claimed and received ID
+            logger.printDiagnostic(event);
+            router = new PeerNodeRouteHandler(event.assignedID);
+            if(!event.randomNodeIP.isEmpty()) { // send join request lookup
+                NodeConnection entryConnection = getNodeConnection(event.randomNodeIP);
+                entryConnection.sendEvent(EventFactory.buildJoinRequestEvent(entryConnection, router._Identifier));
+            }
+        } else {
+            if(!isCustomID)
+                _DiscoveryNode.sendEvent(EventFactory.buildRegisterEvent(_DiscoveryNode, Util.getTimestampHexID()));
+        }
         System.out.println();
         System.out.println("Peer Node targetNodeID:" + event.assignedID);
         System.out.println("Random Peer Node to contact:" + event.randomNodeIP);
         System.out.println();
-        router = new PeerNodeRouteHandler(event.assignedID);
 
-        if(!event.randomNodeIP.isEmpty()) { // send join request lookup
-            NodeConnection entryConnection = getNodeConnection(event.randomNodeIP);
-            entryConnection.sendEvent(EventFactory.buildJoinRequestEvent(entryConnection, router._Identifier));
-        }
     }
 
     public void newConnectionMade(NodeConnection connection) {

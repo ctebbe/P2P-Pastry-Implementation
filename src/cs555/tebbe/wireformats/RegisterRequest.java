@@ -1,7 +1,7 @@
 package cs555.tebbe.wireformats;
 import cs555.tebbe.transport.*;
 import java.io.*;
-public class Register implements Event {
+public class RegisterRequest implements Event {
 
     private final Header header;
     private final String nodeIdentifierRequest;
@@ -10,13 +10,13 @@ public class Register implements Event {
         return nodeIdentifierRequest;
     }
 
-    protected Register(int protocol, NodeConnection connection, String id) {
+    protected RegisterRequest(int protocol, NodeConnection connection, String id) {
         header = new Header(protocol, connection);
         if(id==null) nodeIdentifierRequest = "";
         else  nodeIdentifierRequest = id;
     }
 
-    protected Register(byte[] marshalledBytes) throws IOException {
+    protected RegisterRequest(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 

@@ -5,6 +5,10 @@ import java.util.Date;
 
 public class Util {
 
+    public static String getTimestampHexID() {
+        return Util.getFormattedHexID(new Timestamp(new Date().getTime()).toString().getBytes());
+    }
+
     public static int getAbsoluteHexDifference(String h1, String h2) {
         return Math.abs(Integer.parseInt(h1, 16) - Integer.parseInt(h2, 16));
     }

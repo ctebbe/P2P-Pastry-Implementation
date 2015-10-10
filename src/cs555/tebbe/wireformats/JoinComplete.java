@@ -5,39 +5,30 @@ import cs555.tebbe.transport.NodeConnection;
 import java.io.*;
 
 /**
- * Created by ctebbe
+ * Created by ct.
  */
-public class RegisterResponse implements Event {
+public class JoinComplete implements Event {
 
     private final Header header;
-    public final String assignedID;
-    //public final boolean success;
-    public final String randomNodeIP;
+    public final String nodeID;
 
-    protected RegisterResponse(int protocol, NodeConnection connection, String id, String nodeIP) {
+    protected JoinComplete(int protocol, NodeConnection connection, String nodeID) {
         header = new Header(protocol, connection);
-        assignedID = id;
-        this.randomNodeIP = nodeIP;
+        this.nodeID = nodeID;
     }
 
-    protected RegisterResponse(byte[] marshalledBytes) throws IOException {
+    protected JoinComplete(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
         // header
         this.header = Header.parseHeader(din);
 
-        // targetNodeID
-        int idLen = din.readInt();
-        byte[] idBytes = new byte[idLen];
-        din.readFully(idBytes);
-        assignedID = new String(idBytes);
-
         // node IP
         int ipLen = din.readInt();
         byte[] ipBytes = new byte[ipLen];
         din.readFully(ipBytes);
-        randomNodeIP = new String(ipBytes);
+        nodeID = new String(ipBytes);
 
         bais.close();
         din.close();
@@ -51,13 +42,8 @@ public class RegisterResponse implements Event {
         // header
         dout.write(header.getBytes());
 
-        // targetNodeID
-        byte[] idBytes = assignedID.getBytes();
-        dout.writeInt(idBytes.length);
-        dout.write(idBytes);
-
         // IP
-        byte[] ipBytes = randomNodeIP.getBytes();
+        byte[] ipBytes = nodeID.getBytes();
         dout.writeInt(ipBytes.length);
         dout.write(ipBytes);
 

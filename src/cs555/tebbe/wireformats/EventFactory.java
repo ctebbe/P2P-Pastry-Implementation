@@ -16,14 +16,14 @@ public class EventFactory {
         return factory;
     }
 
-    // REGISTER
+    // REGISTER_REQ
     public static Event buildRegisterEvent(NodeConnection connection, String id) throws IOException {
-        return new Register(Protocol.REGISTER, connection, id);
+        return new RegisterRequest(Protocol.REGISTER_REQ, connection, id);
     }
 
-    // REGISTER RESP
-    public static Event buildRegisterResponseEvent(NodeConnection connection, String id, String node) throws IOException {
-        return new RegisterResponse(Protocol.REGISTER_RESP, connection, id, node);
+    // REGISTER_REQ RESP
+    public static Event buildRegisterResponseEvent(NodeConnection connection, String id, boolean success, String node) throws IOException {
+        return new RegisterAck(Protocol.REGISTER_ACK, connection, id, success, node);
     }
 
     // JOIN REQ
@@ -52,10 +52,10 @@ public class EventFactory {
             DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
             switch(din.readInt()) { // read protocol type byte
-                case Protocol.REGISTER:
-                    return new Register(marshalledBytes);
-                case Protocol.REGISTER_RESP:
-                    return new RegisterResponse(marshalledBytes);
+                case Protocol.REGISTER_REQ:
+                    return new RegisterRequest(marshalledBytes);
+                case Protocol.REGISTER_ACK:
+                    return new RegisterAck(marshalledBytes);
                 case Protocol.JOIN_REQ:
                     return new JoinRequest(marshalledBytes);
                 case Protocol.JOIN_RESP:

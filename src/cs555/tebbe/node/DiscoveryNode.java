@@ -1,6 +1,7 @@
 package cs555.tebbe.node;
 
 import cs555.tebbe.data.PeerNodeData;
+import cs555.tebbe.diagnostics.Log;
 import cs555.tebbe.transport.NodeConnection;
 import cs555.tebbe.transport.TCPServerThread;
 import cs555.tebbe.util.Util;
@@ -11,12 +12,10 @@ import java.net.ServerSocket;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 public class DiscoveryNode implements Node {
 
     public static final int DEFAULT_SERVER_PORT = 18080;
-    private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     private TCPServerThread serverThread = null;                            // listens for incoming connections
     private ConcurrentHashMap<String, NodeConnection> bufferMap    = null;  // buffers incoming unregistered connections
@@ -59,10 +58,10 @@ public class DiscoveryNode implements Node {
 
     public synchronized void onEvent(Event event) {
         switch(event.getType()) {
-            case Protocol.REGISTER:
+            case Protocol.REGISTER_REQ:
                 try {
-                    registerPeerNode((Register) event);
-                    System.out.println("\n* New peer node registered:" + ((Register) event).getHeader().getSenderKey());
+                    registerPeerNode((RegisterRequest) event);
+                    System.out.println("\n* New peer node registered:" + ((RegisterRequest) event).getHeader().getSenderKey());
                 } catch (IOException e) {
                     System.out.println("IOE throws processing register event.");
                     e.printStackTrace();
@@ -75,9 +74,19 @@ public class DiscoveryNode implements Node {
                     e.printStackTrace();
                 }
                 break;
+            case Protocol.JOIN_COMP:
+                processJoinComplete((JoinComplete) event);
+                break;
             default:
                 display("unknown event type:"+event.getType());
         }
+    }
+
+    private void processJoinComplete(JoinComplete event) {
+        String key = event.getHeader().getSenderKey();
+        NodeConnection connection = bufferMap.remove(key);
+        peerMap.put(key, new PeerNodeData(connection, event.nodeID));
+        Log.printDiagnostic(event);
     }
 
     private void processRandomPeerRequest(RandomPeerNodeRequest event) throws IOException {
@@ -85,39 +94,19 @@ public class DiscoveryNode implements Node {
         connection.sendEvent(EventFactory.buildRandomPeerResponseEvent(connection, getRandomPeerNode()));
     }
 
-    private void registerPeerNode(Register event) throws IOException {
-        // generate or set new node targetNodeID and ensure no collisions
-        String id;
-        if(!event.getNodeIDRequest().isEmpty() && !identifierSet.contains(event.getNodeIDRequest())) {
-            id = event.getNodeIDRequest();
-        } else {
-            do {
-                id = Util.getFormattedHexID(new Timestamp(new Date().getTime()).toString().getBytes()); // 4-digit Hex targetNodeID
-            } while(identifierSet.contains(id)); // continue until an id not already claimed is generated
-        }
-        identifierSet.add(id); // add the new node targetNodeID to claimed IDs
-
-        // get random peer node
-        String randomPeer = "";
-        if(peerMap.size() > 0) {
-            Random random = new Random();
-            List<String> keys = new ArrayList(peerMap.keySet());
-            String randKey = keys.get(random.nextInt(keys.size()));
-            randomPeer = Util.removePort(peerMap.get(randKey).connection.getRemoteKey());
+    private void registerPeerNode(RegisterRequest event) throws IOException {
+        boolean success = !identifierSet.contains(event.getNodeIDRequest());
+        if(success) {
+            identifierSet.add(event.getNodeIDRequest());
         }
 
-        // save new peer node
-        String key = event.getHeader().getSenderKey();
-        NodeConnection connection = bufferMap.remove(key);
-        peerMap.put(key, new PeerNodeData(connection, id));
-
-        // send response
-        connection.sendEvent(EventFactory.buildRegisterResponseEvent(connection, id, randomPeer));
+        NodeConnection connection = bufferMap.get(event.getHeader().getSenderKey());
+        connection.sendEvent(EventFactory.buildRegisterResponseEvent(connection, event.getNodeIDRequest(), success, getRandomPeerNode()));
     }
 
+    private static final Random random = new Random();
     private String getRandomPeerNode() {
         if(peerMap.size() > 0) {
-            Random random = new Random();
             List<String> keys = new ArrayList(peerMap.keySet());
             String randKey = keys.get(random.nextInt(keys.size()));
             return Util.removePort(peerMap.get(randKey).connection.getRemoteKey());
