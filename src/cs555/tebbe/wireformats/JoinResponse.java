@@ -33,7 +33,7 @@ public class JoinResponse implements Event {
             this.lowLeafIdentifier = "";
         } else {
             this.lowLeafIP = Util.removePort(lowLeaf.host_port);
-            this.lowLeafIdentifier = lowLeaf.indentifier;
+            this.lowLeafIdentifier = lowLeaf.identifier;
         }
 
         if(highLeaf == null) {
@@ -41,7 +41,7 @@ public class JoinResponse implements Event {
             this.highLeafIdentifier = "";
         } else {
             this.highLeafIP = Util.removePort(highLeaf.host_port);
-            this.highLeafIdentifier = highLeaf.indentifier;
+            this.highLeafIdentifier = highLeaf.identifier;
         }
 
         route = new String[prevRoute.length+1];

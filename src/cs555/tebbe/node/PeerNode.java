@@ -212,7 +212,7 @@ public class PeerNode implements Node {
         boolean sendJoinResponse = false;
         if(router.getLowLeaf() == null && router.getHighLeaf() == null) {                       // first connection of the overlay, no neighbors yet
             sendJoinResponse = true;
-        } else if(router.getLowLeaf().indentifier.equals(router.getHighLeaf().indentifier)) {   // currently two nodes in overlay, joining node is in this leafset
+        } else if(router.getLowLeaf().identifier.equals(router.getHighLeaf().identifier)) {   // currently two nodes in overlay, joining node is in this leafset
             sendJoinResponse = true;
         } else {                                                                                // decide if node is in this leafset or should be re-routed
             String lookupID = router.lookup(event.getLookupID());

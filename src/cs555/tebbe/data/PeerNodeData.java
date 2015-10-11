@@ -6,14 +6,14 @@ package cs555.tebbe.data;
 public class PeerNodeData {
 
     public final String host_port;
-    public final String indentifier;
+    public final String identifier;
 
     public PeerNodeData(String host_port, String identifier) {
         this.host_port = host_port;
-        this.indentifier = identifier;
+        this.identifier = identifier;
     }
 
     public String toString() {
-        return "\t" + host_port + "\t" + indentifier;
+        return "\t" + host_port + "\t" + identifier;
     }
 }

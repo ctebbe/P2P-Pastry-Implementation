@@ -1,6 +1,7 @@
 package cs555.tebbe.routing;
 
 import cs555.tebbe.data.PeerNodeData;
+import cs555.tebbe.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +20,34 @@ public class RoutingTable {
             table.add(new ArrayList<PeerNodeData>());
     }
 
-    private int getRowIndex(String hexDigit) {
-        return Integer.parseInt(hexDigit, 16);
+    public List<PeerNodeData> getRow(String queryID) {
+        return table.get(getRowIndex(queryID)); // get the relevant row according to the queryID
     }
 
-    public static void main(String[] args) {
-        System.out.println(Integer.parseInt("F",16));
+    public PeerNodeData findClosestEntry(String queryID) {
+        //int startRowIndex = getRowIndex(queryID);
+        PeerNodeData closest = null;
+        for(int i=4; i >= 0; i--) { // work backwards up the table and find closest node
+            for(PeerNodeData entry : table.get(i)) {
+                if(closest == null) {
+                    closest = entry;
+                } else {
+                    int dClosest = Util.getAbsoluteHexDifference(closest.identifier, queryID);
+                    int dEntry = Util.getAbsoluteHexDifference(entry.identifier, queryID);
+                    if(dEntry < dClosest)
+                        closest = entry;
+                }
+            }
+        }
+        return closest;
+    }
+
+    private int getRowIndex(String queryID) {
+        for(int index=0; index < 4; index++) {
+            if(_Id.charAt(index) == queryID.charAt(index)) continue;
+            else
+                return index;
+        }
+        return 0;
     }
 }
