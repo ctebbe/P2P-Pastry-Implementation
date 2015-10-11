@@ -20,8 +20,7 @@ public class PeerNode implements Node {
     private TCPServerThread serverThread = null;                                        // listens for incoming nodes
     private Map<String, NodeConnection> connectionsMap = new ConcurrentHashMap<>();     // buffers all current connections for reuse
     private PeerNodeRouteHandler router;                                                // maintains leafset and routing table & related logic
-    private Log logger = new Log();                                               // logs events and prints diagnostic messages
-
+    private Log logger = new Log();                                                     // logs events and prints diagnostic messages
     private final boolean isCustomID;
 
     public PeerNode(String host, int port, String id) {
@@ -93,8 +92,28 @@ public class PeerNode implements Node {
             case Protocol.LEAFSET_UPDATE:
                 processLeafsetUpdate((NodeIDEvent) event);
                 break;
+            case Protocol.FILE_STORE_REQ:
+                try {
+                    processFileStoreRequest((FileStoreLookupRequest) event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
             default:
                 System.out.println("Unknown event type");
+        }
+    }
+
+    private void processFileStoreRequest(FileStoreLookupRequest event) throws IOException {
+        String lookupID = router.lookup(event.getLookupID());
+        if(!lookupID.equals(router._Identifier)) {                                          // re-route request to closer node
+            NodeConnection forwardNode = getNodeConnection(router.queryIPFromNodeID(lookupID));
+            Event fEvent = EventFactory.buildFileStoreRequestEvent(forwardNode, event);
+            logger.printDiagnostic((FileStoreLookupRequest) fEvent);
+            forwardNode.sendEvent(fEvent);
+        } else {
+            NodeConnection respNode = getNodeConnection(event.getQueryNodeIP());
+            respNode.sendEvent(EventFactory.buildFileStoreResponseEvent(respNode, event.getLookupID()));
         }
     }
 

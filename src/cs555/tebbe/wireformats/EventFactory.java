@@ -60,6 +60,19 @@ public class EventFactory {
         return new NodeIDEvent(Protocol.LEAFSET_UPDATE, connection, IP, lowLeaf);
     }
 
+    // FILE STORE REQ
+    public static Event buildFileStoreRequestEvent(NodeConnection connection, String toLookup) throws IOException {
+        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, toLookup);
+    }
+
+    public static Event buildFileStoreRequestEvent(NodeConnection connection, FileStoreLookupRequest event) throws IOException {
+        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, event.getLookupID(), event.getRoute());
+    }
+
+    public static Event buildFileStoreResponseEvent(NodeConnection connection, String id) throws IOException {
+        return new NodeIDEvent(Protocol.FILE_STORE_RESP, connection, id);
+    }
+
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);

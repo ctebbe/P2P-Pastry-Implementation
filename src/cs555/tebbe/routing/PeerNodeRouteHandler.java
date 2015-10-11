@@ -12,9 +12,11 @@ public class PeerNodeRouteHandler {
     public final String _Identifier;
     private PeerNodeData lowLeaf;
     private PeerNodeData highLeaf;
+    private final RoutingTable table;
 
     public PeerNodeRouteHandler(String id) {
         this._Identifier = id;
+        table = new RoutingTable(id);
     }
 
     public String lookup(String lookupID) {

@@ -15,6 +15,10 @@ public class Protocol {
 
     public static final int LEAFSET_UPDATE          = 106;
 
+    public static final int FILE_STORE_REQ          = 107;
+    public static final int FILE_STORE_RESP         = 108;
+    public static final int FILE_STORE              = 109;
+
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;
     public static final byte SUCCESS                = (byte) 0x01;
