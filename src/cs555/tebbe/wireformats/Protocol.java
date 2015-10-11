@@ -13,6 +13,8 @@ public class Protocol {
     public static final int RANDOM_PEER_REQ         = 104;
     public static final int RANDOM_PEER_RESP        = 105;
 
+    public static final int LEAFSET_UPDATE          = 106;
+
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;
     public static final byte SUCCESS                = (byte) 0x01;
@@ -20,10 +22,11 @@ public class Protocol {
 
     public static String getProtocolString(int protocol) {
         switch(protocol) {
-            case NOTYPE:                return "NOTYPE";
-            case REGISTER_REQ:              return "REGISTER_REQ";
-            case JOIN_COMP:              return "JOIN COMPLETE";
-            default:                    return "UNKNOWN";
+            case NOTYPE: return "NOTYPE";
+            case REGISTER_REQ: return "REGISTER_REQ";
+            case JOIN_REQ: return "JOIN REQUEST LOOKUP";
+            case JOIN_COMP: return "JOIN COMPLETE";
+            default: return "UNKNOWN";
         }
     }
 }

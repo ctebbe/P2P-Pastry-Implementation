@@ -32,16 +32,16 @@ public class JoinResponse implements Event {
             this.lowLeafIP = "";
             this.lowLeafIdentifier = "";
         } else {
-            this.lowLeafIP = Util.removePort(lowLeaf.connection.getRemoteKey());
-            this.lowLeafIdentifier = lowLeaf.ID;
+            this.lowLeafIP = Util.removePort(lowLeaf.host_port);
+            this.lowLeafIdentifier = lowLeaf.indentifier;
         }
 
         if(highLeaf == null) {
             this.highLeafIP = "";
             this.highLeafIdentifier = "";
         } else {
-            this.highLeafIP = Util.removePort(highLeaf.connection.getRemoteKey());
-            this.highLeafIdentifier = highLeaf.ID;
+            this.highLeafIP = Util.removePort(highLeaf.host_port);
+            this.highLeafIdentifier = highLeaf.indentifier;
         }
 
         route = new String[prevRoute.length+1];

@@ -9,7 +9,6 @@ import cs555.tebbe.wireformats.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,8 +59,7 @@ public class DiscoveryNode implements Node {
         switch(event.getType()) {
             case Protocol.REGISTER_REQ:
                 try {
-                    registerPeerNode((RegisterRequest) event);
-                    System.out.println("\n* New peer node registered:" + ((RegisterRequest) event).getHeader().getSenderKey());
+                    processRegisterRequest((RegisterRequest) event);
                 } catch (IOException e) {
                     System.out.println("IOE throws processing register event.");
                     e.printStackTrace();
@@ -75,18 +73,24 @@ public class DiscoveryNode implements Node {
                 }
                 break;
             case Protocol.JOIN_COMP:
-                processJoinComplete((JoinComplete) event);
+                try {
+                    processJoinComplete((NodeIDEvent) event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             default:
                 display("unknown event type:"+event.getType());
         }
     }
 
-    private void processJoinComplete(JoinComplete event) {
+    private void processJoinComplete(NodeIDEvent event) throws IOException {
         String key = event.getHeader().getSenderKey();
-        NodeConnection connection = bufferMap.remove(key);
-        peerMap.put(key, new PeerNodeData(connection, event.nodeID));
+        peerMap.put(key, new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
         Log.printDiagnostic(event);
+
+        isNodeJoining = false;
+        if(reqQueue.size() > 0) processRegisterRequest(reqQueue.remove(0));
     }
 
     private void processRandomPeerRequest(RandomPeerNodeRequest event) throws IOException {
@@ -94,10 +98,18 @@ public class DiscoveryNode implements Node {
         connection.sendEvent(EventFactory.buildRandomPeerResponseEvent(connection, getRandomPeerNode()));
     }
 
-    private void registerPeerNode(RegisterRequest event) throws IOException {
-        boolean success = !identifierSet.contains(event.getNodeIDRequest());
+    private List<RegisterRequest> reqQueue = new ArrayList<>();
+    private boolean isNodeJoining = false;
+    private void processRegisterRequest(RegisterRequest event) throws IOException {
+        if(isNodeJoining) {
+            reqQueue.add(event);
+            return;
+        }
+
+        boolean success = !identifierSet.contains(event.getNodeIDRequest()); // check if id is taken
         if(success) {
             identifierSet.add(event.getNodeIDRequest());
+            isNodeJoining = true;
         }
 
         NodeConnection connection = bufferMap.get(event.getHeader().getSenderKey());
@@ -109,7 +121,7 @@ public class DiscoveryNode implements Node {
         if(peerMap.size() > 0) {
             List<String> keys = new ArrayList(peerMap.keySet());
             String randKey = keys.get(random.nextInt(keys.size()));
-            return Util.removePort(peerMap.get(randKey).connection.getRemoteKey());
+            return Util.removePort(peerMap.get(randKey).host_port);
         }
         return "";
     }

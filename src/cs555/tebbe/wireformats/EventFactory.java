@@ -28,12 +28,21 @@ public class EventFactory {
 
     // JOIN REQ
     public static Event buildJoinRequestEvent(NodeConnection connection, String toLookup) throws IOException {
-        return new JoinRequest(Protocol.JOIN_REQ, connection, toLookup);
+        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, toLookup);
+    }
+
+    public static Event buildJoinRequestEvent(NodeConnection connection, JoinLookupRequest event) throws IOException {
+        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, event.getLookupID(), event.getRoute());
     }
 
     // JOIN RESP
     public static Event buildJoinResponseEvent(NodeConnection connection, String ID, PeerNodeData lowLeaf, PeerNodeData highLeaf, String[] route) throws IOException {
         return new JoinResponse(Protocol.JOIN_RESP, connection, ID, lowLeaf, highLeaf, route);
+    }
+
+    // JOIN COMP
+    public static Event buildJoinCompleteEvent(NodeConnection connection, String ID) throws IOException {
+        return new NodeIDEvent(Protocol.JOIN_COMP, connection, ID);
     }
 
     // RANDOM PEER REQ
@@ -44,6 +53,11 @@ public class EventFactory {
     // RANDOM PEER RESP
     public static Event buildRandomPeerResponseEvent(NodeConnection connection, String IP) throws IOException {
         return new RandomPeerNodeResponse(Protocol.RANDOM_PEER_RESP, connection, IP);
+    }
+
+    // LEAF SET UPDATE
+    public static Event buildLeafsetUpdateEvent(NodeConnection connection, String IP, boolean lowLeaf) throws IOException {
+        return new NodeIDEvent(Protocol.LEAFSET_UPDATE, connection, IP, lowLeaf);
     }
 
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
@@ -57,13 +71,17 @@ public class EventFactory {
                 case Protocol.REGISTER_ACK:
                     return new RegisterAck(marshalledBytes);
                 case Protocol.JOIN_REQ:
-                    return new JoinRequest(marshalledBytes);
+                    return new JoinLookupRequest(marshalledBytes);
                 case Protocol.JOIN_RESP:
                     return new JoinResponse(marshalledBytes);
+                case Protocol.JOIN_COMP:
+                    return new NodeIDEvent(marshalledBytes);
                 case Protocol.RANDOM_PEER_REQ:
                     return new RandomPeerNodeRequest(marshalledBytes);
                 case Protocol.RANDOM_PEER_RESP:
                     return new RandomPeerNodeResponse(marshalledBytes);
+                case Protocol.LEAFSET_UPDATE:
+                    return new NodeIDEvent(marshalledBytes);
                 default: return null;
             }
         } catch(IOException ioe) { 

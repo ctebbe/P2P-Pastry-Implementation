@@ -7,13 +7,17 @@ import java.io.*;
 /**
  * Created by ctebbe
  */
-public class JoinRequest extends LookupRequest implements Event {
+public class FileStoreLookupRequest extends LookupRequest implements Event {
 
-    protected JoinRequest(int protocol, NodeConnection connection, String id) {
+    protected FileStoreLookupRequest(int protocol, NodeConnection connection, String id) {
         super(protocol, connection, id);
     }
 
-    protected JoinRequest(byte[] marshalledBytes) throws IOException {
+    protected FileStoreLookupRequest(int protocol, NodeConnection connection, String id, String[] route) {
+        super(protocol, connection, id, route);
+    }
+
+    protected FileStoreLookupRequest(byte[] marshalledBytes) throws IOException {
         super();
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));

@@ -7,17 +7,25 @@ import java.io.*;
 /**
  * Created by ct.
  */
-public class JoinComplete implements Event {
+public class NodeIDEvent implements Event {
 
     private final Header header;
     public final String nodeID;
+    public final boolean lowLeaf;
 
-    protected JoinComplete(int protocol, NodeConnection connection, String nodeID) {
+    protected NodeIDEvent(int protocol, NodeConnection connection, String nodeID) {
         header = new Header(protocol, connection);
         this.nodeID = nodeID;
+        lowLeaf = false;
     }
 
-    protected JoinComplete(byte[] marshalledBytes) throws IOException {
+    protected NodeIDEvent(int protocol, NodeConnection connection, String nodeID, boolean isLow) {
+        header = new Header(protocol, connection);
+        this.nodeID = nodeID;
+        lowLeaf = isLow;
+    }
+
+    protected NodeIDEvent(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(bais));
 
@@ -29,6 +37,8 @@ public class JoinComplete implements Event {
         byte[] ipBytes = new byte[ipLen];
         din.readFully(ipBytes);
         nodeID = new String(ipBytes);
+
+        lowLeaf = din.readBoolean();
 
         bais.close();
         din.close();
@@ -46,6 +56,8 @@ public class JoinComplete implements Event {
         byte[] ipBytes = nodeID.getBytes();
         dout.writeInt(ipBytes.length);
         dout.write(ipBytes);
+
+        dout.writeBoolean(lowLeaf);
 
         // clean up
         dout.flush();

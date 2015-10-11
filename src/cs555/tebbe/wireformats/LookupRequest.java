@@ -21,6 +21,15 @@ public class LookupRequest { //implements Event {
         route = new String[]{Util.removePort(connection.getLocalKey())};
     }
 
+    public LookupRequest(int protocol, NodeConnection connection, String id, String[] oldRoute) {
+        header = new Header(protocol, connection);
+        lookupID = id;
+        route = new String[oldRoute.length+1]; // copy over route and append self to it
+        for(int i=0; i < oldRoute.length; i++)
+            route[i] = oldRoute[i];
+        route[oldRoute.length] = Util.removePort(connection.getLocalKey());
+    }
+
     protected void parseStream(DataInputStream din) throws IOException {
         // header
         this.header = Header.parseHeader(din);

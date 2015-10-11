@@ -10,7 +10,11 @@ public class Util {
     }
 
     public static int getAbsoluteHexDifference(String h1, String h2) {
-        return Math.abs(Integer.parseInt(h1, 16) - Integer.parseInt(h2, 16));
+        return Math.abs(getHexDifference(h1,h2));
+    }
+
+    public static int getHexDifference(String h1, String h2) {
+        return (Integer.parseInt(h1, 16) - Integer.parseInt(h2, 16));
     }
 
     public static String getFormattedHexID(byte[] buf) {
