@@ -23,14 +23,19 @@ public class PeerNodeRouteHandler {
         if(Util.getHexDifference(lookupID, lowLeaf.indentifier) > 0 && Util.getHexDifference(highLeaf.indentifier, lookupID) > 0) { // low < lookup < high
             return _Identifier;
         } else {                                                                // find a closer node to forward to
+
             int distLow = Util.getAbsoluteHexDifference(lookupID, lowLeaf.indentifier);
             int distHigh = Util.getAbsoluteHexDifference(lookupID, highLeaf.indentifier);
+            // find closest in routing table
             int dist = Util.getAbsoluteHexDifference(lookupID, _Identifier);
-            if(dist <= distLow && dist <= distHigh)                             // _Id is closest node
+
+            if(dist < distLow && dist < distHigh)                             // _Id is closest node
                 return _Identifier;
-            else if(distLow < distHigh)
+            else if(distLow < distHigh)                                       // low leaf closest
                 return lowLeaf.indentifier;
-            else
+            else if(dist == distHigh)                                         // send to higher id to break ties
+                return highLeaf.indentifier;
+            else //if(distHigh < distHigh)                                      // high leaf closest
                 return highLeaf.indentifier;
         }
     }

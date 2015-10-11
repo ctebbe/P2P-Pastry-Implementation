@@ -69,8 +69,19 @@ public class EventFactory {
         return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, event.getLookupID(), event.getRoute());
     }
 
-    public static Event buildFileStoreResponseEvent(NodeConnection connection, String id) throws IOException {
-        return new NodeIDEvent(Protocol.FILE_STORE_RESP, connection, id);
+    // FILE STORE RESP
+    public static Event buildFileStoreResponseEvent(NodeConnection connection, FileStoreLookupRequest request) throws IOException {
+        return new FileStoreLookupResponse(Protocol.FILE_STORE_RESP, connection, request);
+    }
+
+    // FILE STORE
+    public static Event buildFileStoreEvent(NodeConnection connection, String fname, byte[] fbytes) throws IOException {
+        return new StoreFile(Protocol.FILE_STORE, connection, fname, fbytes);
+    }
+
+    // FILE STORE COMP
+    public static Event buildFileStoreCompleteEvent(NodeConnection connection, String fname) throws IOException {
+        return new NodeIDEvent(Protocol.FILE_STORE_COMP, connection, fname);
     }
 
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
@@ -94,6 +105,14 @@ public class EventFactory {
                 case Protocol.RANDOM_PEER_RESP:
                     return new RandomPeerNodeResponse(marshalledBytes);
                 case Protocol.LEAFSET_UPDATE:
+                    return new NodeIDEvent(marshalledBytes);
+                case Protocol.FILE_STORE_REQ:
+                    return new FileStoreLookupRequest(marshalledBytes);
+                case Protocol.FILE_STORE_RESP:
+                    return new FileStoreLookupResponse(marshalledBytes);
+                case Protocol.FILE_STORE:
+                    return new StoreFile(marshalledBytes);
+                case Protocol.FILE_STORE_COMP:
                     return new NodeIDEvent(marshalledBytes);
                 default: return null;
             }

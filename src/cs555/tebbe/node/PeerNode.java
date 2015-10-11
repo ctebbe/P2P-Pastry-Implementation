@@ -50,7 +50,7 @@ public class PeerNode implements Node {
         Scanner keyboard = new Scanner(System.in);
         String input = keyboard.nextLine();
         while(input != null) {
-            if(input.contains("log")) {
+            if(input.contains("print")) {
                 print();
             }
             input = keyboard.nextLine();
@@ -99,9 +99,30 @@ public class PeerNode implements Node {
                     e.printStackTrace();
                 }
                 break;
+            case Protocol.FILE_STORE:
+                try {
+                    processFileStore((StoreFile) event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
             default:
                 System.out.println("Unknown event type");
         }
+    }
+
+    private List<String> files = new ArrayList<>();
+    private void processFileStore(StoreFile event) throws IOException {
+        File file = new File(BASE_SAVE_DIR + event.filename);
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(event.bytes);
+        fos.close();
+        files.add(event.filename);
+        logger.printDiagnostic(event);
+
+        // send completion
+        NodeConnection connection = getNodeConnection(event.getHeader().getSenderKey());
+        connection.sendEvent(EventFactory.buildFileStoreCompleteEvent(connection,""));
     }
 
     private void processFileStoreRequest(FileStoreLookupRequest event) throws IOException {
@@ -111,9 +132,9 @@ public class PeerNode implements Node {
             Event fEvent = EventFactory.buildFileStoreRequestEvent(forwardNode, event);
             logger.printDiagnostic((FileStoreLookupRequest) fEvent);
             forwardNode.sendEvent(fEvent);
-        } else {
+        } else { // file is stored here
             NodeConnection respNode = getNodeConnection(event.getQueryNodeIP());
-            respNode.sendEvent(EventFactory.buildFileStoreResponseEvent(respNode, event.getLookupID()));
+            respNode.sendEvent(EventFactory.buildFileStoreResponseEvent(respNode, event));
         }
     }
 

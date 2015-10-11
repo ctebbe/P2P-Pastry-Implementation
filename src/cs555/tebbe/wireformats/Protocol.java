@@ -18,6 +18,7 @@ public class Protocol {
     public static final int FILE_STORE_REQ          = 107;
     public static final int FILE_STORE_RESP         = 108;
     public static final int FILE_STORE              = 109;
+    public static final int FILE_STORE_COMP         = 110;
 
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;
@@ -30,6 +31,8 @@ public class Protocol {
             case REGISTER_REQ: return "REGISTER_REQ";
             case JOIN_REQ: return "JOIN REQUEST LOOKUP";
             case JOIN_COMP: return "JOIN COMPLETE";
+            case FILE_STORE_REQ: return "FILE REQUEST LOOKUP";
+            case FILE_STORE_RESP: return "FILE RESPONSE";
             default: return "UNKNOWN";
         }
     }

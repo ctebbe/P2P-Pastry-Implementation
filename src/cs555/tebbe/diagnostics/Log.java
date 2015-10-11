@@ -2,10 +2,7 @@ package cs555.tebbe.diagnostics;
 
 import cs555.tebbe.data.PeerNodeData;
 import cs555.tebbe.util.Util;
-import cs555.tebbe.wireformats.LookupRequest;
-import cs555.tebbe.wireformats.NodeIDEvent;
-import cs555.tebbe.wireformats.Protocol;
-import cs555.tebbe.wireformats.RegisterAck;
+import cs555.tebbe.wireformats.*;
 
 import java.util.logging.Logger;
 /**
@@ -50,6 +47,13 @@ public class Log {
         System.out.println();
     }
 
+    public void printDiagnostic(FileStoreLookupResponse event) {
+        System.out.println();
+        log("Node to store file:"+Util.removePort(event.getHeader().getSenderKey()));
+        printDiagnostic(event.getRoute());
+        System.out.println();
+    }
+
     public void printDiagnostic(LookupRequest event) {
         System.out.println();
         log("* Re-routing lookup request:");
@@ -57,6 +61,19 @@ public class Log {
         log("Lookup ID:"+ event.getLookupID());
         log("Hop count:"+ (event.getRoute().length-1));
         log("Next hop:"+ Util.removePort(event.getHeader().getReceiverKey()));
+        System.out.println();
+    }
+
+    public void printDiagnostic(RandomPeerNodeResponse event, String dataID) {
+        System.out.println();
+        log("Random node to contact:"+event.nodeIP);
+        log("Data ID:"+dataID);
+        System.out.println();
+    }
+
+    public void printDiagnostic(StoreFile event) {
+        System.out.println();
+        log("Storing new file:" + event.filename);
         System.out.println();
     }
 }
