@@ -41,7 +41,7 @@ public class DiscoveryNode implements Node {
         Scanner keyboard = new Scanner(System.in);
         String input = keyboard.nextLine();
         while(input != null) {
-            if(input.contains("list-nodes")) {
+            if(input.contains("nodes")) {
                 printListNodes();
             }
             input = keyboard.nextLine();
@@ -106,7 +106,7 @@ public class DiscoveryNode implements Node {
     private String joiningNodeKey;
     private void processRegisterRequest(RegisterRequest event) throws IOException {
         if(isNodeJoining && !event.getHeader().getSenderKey().equals(joiningNodeKey)) {
-            System.out.println("caching req from:"+event.getHeader().getSenderKey());
+            //System.out.println("caching req from:"+event.getHeader().getSenderKey());
             reqQueue.add(event);
             return;
         }

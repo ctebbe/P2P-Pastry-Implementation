@@ -9,8 +9,8 @@ import java.io.*;
  */
 public class FileStoreLookupResponse extends LookupRequest implements Event {
 
-    protected FileStoreLookupResponse(int protocol, NodeConnection connection, FileStoreLookupRequest request) {
-        super(protocol, connection, request.getLookupID(), request.getRoute());
+    protected FileStoreLookupResponse(int protocol, NodeConnection connection, FileStoreLookupRequest request, String id) {
+        super(protocol, connection, request.getLookupID(), request.getRoute(), id);
     }
 
     protected FileStoreLookupResponse(byte[] marshalledBytes) throws IOException {

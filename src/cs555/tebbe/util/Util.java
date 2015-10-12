@@ -20,7 +20,12 @@ public class Util {
     public static String getFormattedHexID(byte[] buf) {
         String hex = convertBytesToHex(buf);
         int len = hex.length();
-        return hex.substring(len-4, len); // get last 4 hex digits
+        return hex.substring(len-4, len);
+    }
+
+    public static String getDataHexID(byte[] buf) {
+        String hex = convertBytesToHex(buf);
+        return hex.substring(0, 4);
     }
 
     public static String convertBytesToHex(byte[] buf) {
@@ -65,14 +70,9 @@ public class Util {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
-        Thread.sleep(100);
-        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
-        Thread.sleep(1000);
-        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
-        System.out.println(Util.convertBytesToHex(new Timestamp(new Date().getTime()).toString().getBytes()));
-        System.out.println(Util.convertBytesToHex("hello".getBytes()));
-
-
+        System.out.println(Util.getDataHexID("goose.png".getBytes()));
+        System.out.println(Util.getDataHexID("duck.png".getBytes()));
+        System.out.println(Util.getDataHexID("moose.png".getBytes()));
+        System.out.println(Util.getDataHexID("gator.png".getBytes()));
     }
 }

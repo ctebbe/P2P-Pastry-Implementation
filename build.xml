@@ -51,6 +51,14 @@
         </java>
     </target>
 
+    <target name="peer_custom" depends="jar">
+        <java classname="${package}.${peer.node}" fork="true">
+            <classpath path="${dist}\${ant.project.name}.jar" />
+            <arg value="${arg0}"/>
+            <arg value="${arg1}"/>
+        </java>
+    </target>
+
     <target name="data" depends="jar">
         <java classname="${package}.${data.node}" fork="true">
             <classpath path="${dist}\${ant.project.name}.jar" />

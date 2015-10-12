@@ -16,7 +16,9 @@ do
     ant -Darg0=${HOST} peer; bash'" #&
 done < peernodes
 
+gnome-terminal -x bash -c "ssh -t santa-fe 'cd '~/workspace/cs555/A02'; echo $PEERNODE;
+ant -Darg0=${HOST} -Darg1=true peer_custom; bash'" #&
 
 # data node startup
-gnome-terminal -x bash -c "ssh -t cheyenne 'cd '~/workspace/cs555/A02';
-echo $(hostname); ant -Darg0=${HOST} data; bash'" #&
+gnome-terminal -x bash -c "ssh -t salt-lake-city 'cd '~/workspace/cs555/A02'; echo $(hostname);
+ant -Darg0=${HOST} data; bash'" #&

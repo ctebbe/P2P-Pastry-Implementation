@@ -8,6 +8,7 @@ import cs555.tebbe.wireformats.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,8 +25,8 @@ public class PeerNode implements Node {
     private Log logger = new Log();                                                     // logs events and prints diagnostic messages
     private final boolean isCustomID;
 
-    public PeerNode(String host, int port, String id) {
-        isCustomID = id != null;
+    public PeerNode(String host, int port, boolean isCustomID) {
+        this.isCustomID = isCustomID;
         try {
             serverThread = new TCPServerThread(this, new ServerSocket(DEFAULT_SERVER_PORT));
             serverThread.start();
@@ -36,8 +37,14 @@ public class PeerNode implements Node {
 
         try {
             _DiscoveryNode = ConnectionFactory.getInstance().buildConnection(this, new Socket(host, port));
+            String id;
             if(!isCustomID)
                 id = Util.getTimestampHexID();
+            else {
+                Scanner keyboard = new Scanner(System.in);
+                System.out.println("Peer Node ID?");
+                id = keyboard.nextLine();
+            }
             _DiscoveryNode.sendEvent(EventFactory.buildRegisterEvent(_DiscoveryNode, id));
         } catch(IOException ioe) {
             System.out.println("IOException thrown contacting DiscoveryNode:"+ioe.getMessage());
@@ -53,28 +60,14 @@ public class PeerNode implements Node {
         while(input != null) {
             if(input.contains("state")) {
                 print();
-            } else if(input.contains("exit")) {
-                try {
-                    exitOverlay();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             } else if(input.contains("files")) {
-                System.out.println("Files:");
+                System.out.println("Stored files:");
                 for(String fname : files) {
-                    System.out.println("\t" + fname + "\t" + Util.getFormattedHexID(fname.getBytes()));
+                    System.out.println("\t" + fname + "\t" + Util.getDataHexID(fname.getBytes()));
                 }
             }
             input = keyboard.nextLine();
         }
-    }
-
-    private void exitOverlay() throws IOException {
-        _DiscoveryNode.sendEvent(EventFactory.buildExitOverlayEvent(_DiscoveryNode, router._Identifier));
-        // migrate files
-
-        // set leafs as each other
-        //NodeConnection lowLeaf = getNodeConnection(router.)
     }
 
     private void print() {
@@ -111,7 +104,11 @@ public class PeerNode implements Node {
                 }
                 break;
             case Protocol.LEAFSET_UPDATE:
-                processLeafsetUpdate((NodeIDEvent) event);
+                try {
+                    processLeafsetUpdate((NodeIDEvent) event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             case Protocol.FILE_STORE_REQ:
                 try {
@@ -130,14 +127,16 @@ public class PeerNode implements Node {
             case Protocol.TABLE_UPDATE:
                 processRoutingTableUpdateEvent((NodeIDEvent) event);
                 break;
+            case Protocol.FILE_STORE_COMP: // ignore
+                break;
             default:
                 System.out.println("Unknown event type");
         }
     }
 
     private void processRoutingTableUpdateEvent(NodeIDEvent event) {
-        System.out.println("Adding new table entry:"+event.nodeID);
         router.updateTable(event.getHeader().getSenderKey(), event.nodeID);
+        logger.printDiagnostic(router);
     }
 
     private void processFileStore(StoreFile event) throws IOException {
@@ -157,27 +156,36 @@ public class PeerNode implements Node {
         String lookupID = router.lookup(event.getLookupID());
         if(!lookupID.equals(router._Identifier)) {                                          // re-route request to closer node
             NodeConnection forwardNode = getNodeConnection(router.queryIPFromNodeID(lookupID));
-            Event fEvent = EventFactory.buildFileStoreRequestEvent(forwardNode, event);
+            Event fEvent = EventFactory.buildFileStoreRequestEvent(forwardNode, event, router._Identifier);
             logger.printDiagnostic((FileStoreLookupRequest) fEvent);
             forwardNode.sendEvent(fEvent);
         } else { // file is stored here
             NodeConnection respNode = getNodeConnection(event.getQueryNodeIP());
-            respNode.sendEvent(EventFactory.buildFileStoreResponseEvent(respNode, event));
+            respNode.sendEvent(EventFactory.buildFileStoreResponseEvent(respNode, event, router._Identifier));
         }
     }
 
-    private void processLeafsetUpdate(NodeIDEvent event) {
+    private void processLeafsetUpdate(NodeIDEvent event) throws IOException {
         if(event.lowLeaf) {
             router.setLowLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
         } else {
             router.setHighLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
         }
 
-        // migrate any files closer to new leaf
-        for(String fname : files) {
-            String fId = Util.getFormattedHexID(fname.getBytes());
+        // migrate any necessary files closer to new leaf
+        Iterator<String> fIterator = files.iterator();
+        while(fIterator.hasNext()) {
+            String fname = fIterator.next();
+            String fId = Util.getDataHexID(fname.getBytes());
             int dist = Util.getAbsoluteHexDifference(router._Identifier,fId);
             int distLeaf = Util.getAbsoluteHexDifference(event.nodeID,fId);
+            if(distLeaf < dist || (distLeaf == dist && Util.getHexDifference(event.nodeID,router._Identifier) > 0)) { // migrate file
+                File fToMigrate = new File(BASE_SAVE_DIR + fname);
+                NodeConnection connection = getNodeConnection(event.getHeader().getSenderKey());
+                connection.sendEvent(EventFactory.buildFileStoreEvent(connection, fToMigrate.getName(), Files.readAllBytes(fToMigrate.toPath())));
+                logger.printDiagnostic(fToMigrate);
+                fIterator.remove();
+            }
         }
     }
 
@@ -233,21 +241,13 @@ public class PeerNode implements Node {
             // update routing table of all nodes on route
             String[] route = event.route;
             for(int i=1; i < route.length; i++) {
-                NodeConnection connection = getNodeConnection(route[i]);
+                NodeConnection connection = getNodeConnection(route[i].split("\\t")[0]);
                 if(!(connection.getRemoteKey().equals(senderLeafConnection.getRemoteKey()) ||
                         connection.getRemoteKey().equals(otherLeafConnection.getRemoteKey()))) // avoid double-sending updates
                     connection.sendEvent(EventFactory.buildRouteTableUpdateEvent(connection, router._Identifier));
             }
-
-            // routing table
-            System.out.println("Routing Table:");
-            for(List<PeerNodeData> row : event.table) {
-                System.out.println("New row:");
-                for(PeerNodeData entry : row) {
-                    System.out.println("\t"+entry.identifier);
-                }
-            }
             router.updateTableEntries(event.table);
+            logger.printDiagnostic(router);
         }
         logger.printDiagnostic(event.route);
         _DiscoveryNode.sendEvent(EventFactory.buildJoinCompleteEvent(_DiscoveryNode, router._Identifier));
@@ -276,7 +276,7 @@ public class PeerNode implements Node {
             String closestID = router.lookup(event.getLookupID());
             if(!closestID.equals(router._Identifier)) {                                          // re-route request to closer node
                 NodeConnection forwardNode = getNodeConnection(router.queryIPFromNodeID(closestID));
-                Event fEvent = EventFactory.buildJoinRequestEvent(forwardNode, event, router.findRow(event.getLookupID()));
+                Event fEvent = EventFactory.buildJoinRequestEvent(forwardNode, event, router._Identifier, router.findRow(event.getLookupID()));
                 logger.printDiagnostic((JoinLookupRequest) fEvent);
                 forwardNode.sendEvent(fEvent);
             } else
@@ -301,7 +301,6 @@ public class PeerNode implements Node {
                 _DiscoveryNode.sendEvent(EventFactory.buildJoinCompleteEvent(_DiscoveryNode, event.assignedID));
             }
         } else {
-            System.out.println("*** REGISTER FAILED - ID TAKEN ****");
             if(!isCustomID)
                 _DiscoveryNode.sendEvent(EventFactory.buildRegisterEvent(_DiscoveryNode, Util.getTimestampHexID()));
         }
@@ -316,6 +315,6 @@ public class PeerNode implements Node {
     }
 
     public static void main(String args[]) {
-        new PeerNode(args[0], DiscoveryNode.DEFAULT_SERVER_PORT, null);
+        new PeerNode(args[0], DiscoveryNode.DEFAULT_SERVER_PORT, args.length > 1);
     }
 }

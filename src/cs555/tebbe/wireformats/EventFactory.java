@@ -30,13 +30,13 @@ public class EventFactory {
 
     // JOIN REQ
     public static Event buildJoinRequestEvent(NodeConnection connection, String toLookup) throws IOException {
-        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, toLookup);
+        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, toLookup, toLookup);
     }
 
-    public static Event buildJoinRequestEvent(NodeConnection connection, JoinLookupRequest event, List<PeerNodeData> newRow) throws IOException {
+    public static Event buildJoinRequestEvent(NodeConnection connection, JoinLookupRequest event, String id, List<PeerNodeData> newRow) throws IOException {
         if(newRow.size() > 0)
             event.routingTable.add(newRow); // append new row to accumulated routing table
-        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, event.getLookupID(), event.getRoute(), event.routingTable);
+        return new JoinLookupRequest(Protocol.JOIN_REQ, connection, event.getLookupID(), event.getRoute(), id, event.routingTable);
     }
 
     // JOIN RESP
@@ -65,17 +65,17 @@ public class EventFactory {
     }
 
     // FILE STORE REQ
-    public static Event buildFileStoreRequestEvent(NodeConnection connection, String toLookup) throws IOException {
-        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, toLookup);
+    public static Event buildFileStoreRequestEvent(NodeConnection connection, String toLookup, String id) throws IOException {
+        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, toLookup, id);
     }
 
-    public static Event buildFileStoreRequestEvent(NodeConnection connection, FileStoreLookupRequest event) throws IOException {
-        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, event.getLookupID(), event.getRoute());
+    public static Event buildFileStoreRequestEvent(NodeConnection connection, FileStoreLookupRequest event, String id) throws IOException {
+        return new FileStoreLookupRequest(Protocol.FILE_STORE_REQ, connection, event.getLookupID(), event.getRoute(), id);
     }
 
     // FILE STORE RESP
-    public static Event buildFileStoreResponseEvent(NodeConnection connection, FileStoreLookupRequest request) throws IOException {
-        return new FileStoreLookupResponse(Protocol.FILE_STORE_RESP, connection, request);
+    public static Event buildFileStoreResponseEvent(NodeConnection connection, FileStoreLookupRequest request, String id) throws IOException {
+        return new FileStoreLookupResponse(Protocol.FILE_STORE_RESP, connection, request, id);
     }
 
     // FILE STORE
@@ -91,11 +91,6 @@ public class EventFactory {
     // ROUTE TABLE UPDATE
     public static Event buildRouteTableUpdateEvent(NodeConnection connection, String id) throws IOException {
         return new NodeIDEvent(Protocol.TABLE_UPDATE, connection, id);
-    }
-
-    // EXIT OVERLAY
-    public static Event buildExitOverlayEvent(NodeConnection connection, String id) throws IOException {
-        return new NodeIDEvent(Protocol.EXIT_OVERLAY, connection, id);
     }
 
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
@@ -129,8 +124,6 @@ public class EventFactory {
                 case Protocol.FILE_STORE_COMP:
                     return new NodeIDEvent(marshalledBytes);
                 case Protocol.TABLE_UPDATE:
-                    return new NodeIDEvent(marshalledBytes);
-                case Protocol.EXIT_OVERLAY:
                     return new NodeIDEvent(marshalledBytes);
                 default: return null;
             }

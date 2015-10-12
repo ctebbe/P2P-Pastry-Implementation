@@ -1,9 +1,11 @@
 package cs555.tebbe.diagnostics;
 
 import cs555.tebbe.data.PeerNodeData;
+import cs555.tebbe.routing.PeerNodeRouteHandler;
 import cs555.tebbe.util.Util;
 import cs555.tebbe.wireformats.*;
 
+import java.io.File;
 import java.util.logging.Logger;
 /**
  * Created by ctebbe
@@ -75,6 +77,18 @@ public class Log {
     public void printDiagnostic(StoreFile event) {
         System.out.println();
         log("Storing new file:" + event.filename);
+        System.out.println();
+    }
+
+    public void printDiagnostic(PeerNodeRouteHandler router) {
+        log("* Routing table update");
+        log(router.printTable());
+        System.out.println();
+    }
+
+    public void printDiagnostic(File file) {
+        System.out.println();
+        log("* Migrating file to leaf:" + file.getName());
         System.out.println();
     }
 }

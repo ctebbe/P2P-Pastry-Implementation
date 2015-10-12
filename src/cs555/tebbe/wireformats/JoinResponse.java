@@ -51,7 +51,7 @@ public class JoinResponse implements Event {
         route = new String[prevRoute.length+1];
         for(int i=0; i < prevRoute.length; i++)
             route[i] = prevRoute[i];
-        route[route.length-1] = Util.removePort(connection.getLocalKey());
+        route[route.length-1] = Util.removePort(connection.getLocalKey())+"\t"+ID;
 
         table = routingTable;
     }

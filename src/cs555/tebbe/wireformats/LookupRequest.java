@@ -15,19 +15,19 @@ public class LookupRequest { //implements Event {
     private String[] route;
 
     protected LookupRequest() {}
-    protected LookupRequest(int protocol, NodeConnection connection, String id) {
+    protected LookupRequest(int protocol, NodeConnection connection, String lookupID, String myID) {
         header = new Header(protocol, connection);
-        lookupID = id;
-        route = new String[]{Util.removePort(connection.getLocalKey())};
+        this.lookupID = lookupID;
+        route = new String[]{Util.removePort(connection.getLocalKey())+"\t"+myID};
     }
 
-    public LookupRequest(int protocol, NodeConnection connection, String id, String[] oldRoute) {
+    public LookupRequest(int protocol, NodeConnection connection, String lookupID, String[] oldRoute, String myID) {
         header = new Header(protocol, connection);
-        lookupID = id;
+        this.lookupID = lookupID;
         route = new String[oldRoute.length+1]; // copy over route and append self to it
         for(int i=0; i < oldRoute.length; i++)
             route[i] = oldRoute[i];
-        route[oldRoute.length] = Util.removePort(connection.getLocalKey());
+        route[oldRoute.length] = Util.removePort(connection.getLocalKey()) +"\t"+ myID;
     }
 
     protected void parseStream(DataInputStream din) throws IOException {

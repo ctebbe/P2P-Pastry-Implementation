@@ -46,8 +46,8 @@ public class DataStoreNode implements Node {
         Scanner keyboard = new Scanner(System.in);
         String input = keyboard.nextLine();
         while(input != null) {
-            if(input.contains("store-file")) {
-                System.out.println("File path?\n");
+            if(input.contains("store")) {
+                System.out.println("File path?");
                 String fpath = keyboard.nextLine();
                 File f = new File(fpath);
                 try {
@@ -61,7 +61,6 @@ public class DataStoreNode implements Node {
     private File cacheFile;
     private void sendStoreDataRequest(File toStore) throws IOException {
         cacheFile = toStore;
-        String dataID = Util.getFormattedHexID(cacheFile.getName().getBytes());
         _DiscoveryNode.sendEvent(EventFactory.buildRandomPeerRequestEvent(_DiscoveryNode));
     }
 
@@ -110,10 +109,10 @@ public class DataStoreNode implements Node {
     }
 
     private void sendLookupQuery(RandomPeerNodeResponse event) throws IOException {
-        String id = Util.getFormattedHexID(cacheFile.getName().getBytes());
+        String id = Util.getDataHexID(cacheFile.getName().getBytes());
         logger.printDiagnostic(event, id);
         NodeConnection entry = getNodeConnection(event.nodeIP);
-        entry.sendEvent(EventFactory.buildFileStoreRequestEvent(entry, id));
+        entry.sendEvent(EventFactory.buildFileStoreRequestEvent(entry, id, ""));
     }
 
     @Override
