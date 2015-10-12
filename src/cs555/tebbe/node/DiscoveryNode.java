@@ -90,7 +90,10 @@ public class DiscoveryNode implements Node {
         Log.printDiagnostic(event);
 
         isNodeJoining = false;
-        if(reqQueue.size() > 0) processRegisterRequest(reqQueue.remove(0));
+        if(reqQueue.size() > 0) {
+            RegisterRequest req = reqQueue.remove(0);
+            processRegisterRequest(req);
+        }
     }
 
     private void processRandomPeerRequest(RandomPeerNodeRequest event) throws IOException {
@@ -100,8 +103,10 @@ public class DiscoveryNode implements Node {
 
     private List<RegisterRequest> reqQueue = new ArrayList<>();
     private boolean isNodeJoining = false;
+    private String joiningNodeKey;
     private void processRegisterRequest(RegisterRequest event) throws IOException {
-        if(isNodeJoining) {
+        if(isNodeJoining && !event.getHeader().getSenderKey().equals(joiningNodeKey)) {
+            System.out.println("caching req from:"+event.getHeader().getSenderKey());
             reqQueue.add(event);
             return;
         }
@@ -110,6 +115,8 @@ public class DiscoveryNode implements Node {
         if(success) {
             identifierSet.add(event.getNodeIDRequest());
             isNodeJoining = true;
+        } else {
+            joiningNodeKey = event.getHeader().getSenderKey();
         }
 
         NodeConnection connection = bufferMap.get(event.getHeader().getSenderKey());

@@ -12,9 +12,10 @@ public class Log {
 
     private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
+    private static int i=0;
     public static void printDiagnostic(NodeIDEvent event) {
         System.out.println();
-        log("* New PeerNode joined");
+        log((++i) + "* New PeerNode joined");
         log(event.getHeader().getSenderKey());
         log(event.nodeID);
         System.out.println();

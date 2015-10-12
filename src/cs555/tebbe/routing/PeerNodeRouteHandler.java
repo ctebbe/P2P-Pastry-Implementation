@@ -53,26 +53,12 @@ public class PeerNodeRouteHandler {
                     }
                 }
             });
-            return identifiers.get(0);
-            /*
-            int distTable = Integer.MAX_VALUE;
-            PeerNodeData tableEntry = table.findClosestEntry(lookupID);
-            if(tableEntry != null)
-                distTable = Util.getAbsoluteHexDifference(lookupID, tableEntry.identifier);
-            int distLow = Util.getAbsoluteHexDifference(lookupID, lowLeaf.identifier);
-            int distHigh = Util.getAbsoluteHexDifference(lookupID, highLeaf.identifier);
-            int dist = Util.getAbsoluteHexDifference(lookupID, _Identifier);
-
-            if(dist < distLow && dist < distHigh && dist < distTable) // _Id is closest node
-                return _Identifier;
-            else if(distLow < distHigh && distLow < distTable) // low leaf closest
-                return lowLeaf.identifier;
-            else if(dist == distHigh) // send to higher id to break ties
-                return highLeaf.identifier;
-            else //if(distHigh < distHigh)                                      // high leaf closest
-                return highLeaf.identifier;
-            */
+            return identifiers.get(0); // return closest node
         }
+    }
+
+    public List<PeerNodeData> findRow(String queryID) {
+        return table.getRow(queryID);
     }
 
     public String queryIPFromNodeID(String queryID) {
@@ -80,8 +66,15 @@ public class PeerNodeRouteHandler {
             return Util.removePort(lowLeaf.host_port);
         else if(highLeaf.identifier.equals(queryID))
             return Util.removePort(highLeaf.host_port);
-        // check routing table..
-        return null;
+        else {
+            System.out.println("* Routing from routing table");
+            return table.getIPFromID(queryID);
+        }
+    }
+
+
+    public void updateTable(String host_port, String id) {
+        table.updateTable(new PeerNodeData(Util.removePort(host_port), id));
     }
 
     public void setLowLeaf(PeerNodeData newLeaf) {
@@ -100,5 +93,17 @@ public class PeerNodeRouteHandler {
 
     public PeerNodeData getHighLeaf() {
         return highLeaf;
+    }
+
+    public String printTable() {
+        return table.toString();
+    }
+
+    public void updateTableEntries(List<List<PeerNodeData>> newEntries) {
+        for(List<PeerNodeData> row : newEntries) {
+            for(PeerNodeData entry : row) {
+                table.updateTable(entry);
+            }
+        }
     }
 }

@@ -20,6 +20,8 @@ public class Protocol {
     public static final int FILE_STORE              = 109;
     public static final int FILE_STORE_COMP         = 110;
 
+    public static final int TABLE_UPDATE            = 111;
+
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;
     public static final byte SUCCESS                = (byte) 0x01;

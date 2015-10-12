@@ -64,6 +64,7 @@ public class PeerNode implements Node {
         System.out.println(router.getLowLeaf().toString());
         System.out.println("High leaf:");
         System.out.println(router.getHighLeaf().toString());
+        System.out.println(router.printTable());
     }
 
     public synchronized void onEvent(Event event){
@@ -106,9 +107,17 @@ public class PeerNode implements Node {
                     e.printStackTrace();
                 }
                 break;
+            case Protocol.TABLE_UPDATE:
+                processRoutingTableUpdateEvent((NodeIDEvent) event);
+                break;
             default:
                 System.out.println("Unknown event type");
         }
+    }
+
+    private void processRoutingTableUpdateEvent(NodeIDEvent event) {
+        System.out.println("Adding new table entry:"+event.nodeID);
+        router.updateTable(event.getHeader().getSenderKey(), event.nodeID);
     }
 
     private List<String> files = new ArrayList<>();
@@ -188,8 +197,31 @@ public class PeerNode implements Node {
                 router.setLowLeaf(new PeerNodeData(senderLeafConnection.getRemoteKey(), event.targetNodeID));
                 router.setHighLeaf(new PeerNodeData(otherLeafConnection.getRemoteKey(), event.highLeafIdentifier));
             }
+
             senderLeafConnection.sendEvent(EventFactory.buildLeafsetUpdateEvent(senderLeafConnection, router._Identifier, isSenderLowLeaf));
+            senderLeafConnection.sendEvent(EventFactory.buildRouteTableUpdateEvent(senderLeafConnection, router._Identifier));
+
             otherLeafConnection.sendEvent(EventFactory.buildLeafsetUpdateEvent(otherLeafConnection, router._Identifier, !isSenderLowLeaf));
+            otherLeafConnection.sendEvent(EventFactory.buildRouteTableUpdateEvent(otherLeafConnection, router._Identifier));
+
+            // update routing table of all nodes on route
+            String[] route = event.route;
+            for(int i=1; i < route.length; i++) {
+                NodeConnection connection = getNodeConnection(route[i]);
+                if(!(connection.getRemoteKey().equals(senderLeafConnection.getRemoteKey()) ||
+                        connection.getRemoteKey().equals(otherLeafConnection.getRemoteKey()))) // avoid double-sending updates
+                    connection.sendEvent(EventFactory.buildRouteTableUpdateEvent(connection, router._Identifier));
+            }
+
+            // routing table
+            System.out.println("Routing Table:");
+            for(List<PeerNodeData> row : event.table) {
+                System.out.println("New row:");
+                for(PeerNodeData entry : row) {
+                    System.out.println("\t"+entry.identifier);
+                }
+            }
+            router.updateTableEntries(event.table);
         }
         logger.printDiagnostic(event.route);
         _DiscoveryNode.sendEvent(EventFactory.buildJoinCompleteEvent(_DiscoveryNode, router._Identifier));
@@ -215,10 +247,10 @@ public class PeerNode implements Node {
         } else if(router.getLowLeaf().identifier.equals(router.getHighLeaf().identifier)) {   // currently two nodes in overlay, joining node is in this leafset
             sendJoinResponse = true;
         } else {                                                                                // decide if node is in this leafset or should be re-routed
-            String lookupID = router.lookup(event.getLookupID());
-            if(!lookupID.equals(router._Identifier)) {                                          // re-route request to closer node
-                NodeConnection forwardNode = getNodeConnection(router.queryIPFromNodeID(lookupID));
-                Event fEvent = EventFactory.buildJoinRequestEvent(forwardNode, event);
+            String closestID = router.lookup(event.getLookupID());
+            if(!closestID.equals(router._Identifier)) {                                          // re-route request to closer node
+                NodeConnection forwardNode = getNodeConnection(router.queryIPFromNodeID(closestID));
+                Event fEvent = EventFactory.buildJoinRequestEvent(forwardNode, event, router.findRow(event.getLookupID()));
                 logger.printDiagnostic((JoinLookupRequest) fEvent);
                 forwardNode.sendEvent(fEvent);
             } else
@@ -227,7 +259,8 @@ public class PeerNode implements Node {
 
         if(sendJoinResponse) {                                                                  // send leafset to the query node
             NodeConnection newNode = getNodeConnection(event.getQueryNodeIP());
-            newNode.sendEvent(EventFactory.buildJoinResponseEvent(newNode, router._Identifier, router.getLowLeaf(), router.getHighLeaf(), event.getRoute()));
+            newNode.sendEvent(EventFactory.buildJoinResponseEvent(newNode, router._Identifier,
+                    router.getLowLeaf(), router.getHighLeaf(), event.getRoute(), event.routingTable));
         }
     }
 
@@ -242,6 +275,7 @@ public class PeerNode implements Node {
                 _DiscoveryNode.sendEvent(EventFactory.buildJoinCompleteEvent(_DiscoveryNode, event.assignedID));
             }
         } else {
+            System.out.println("*** REGISTER FAILED - ID TAKEN ****");
             if(!isCustomID)
                 _DiscoveryNode.sendEvent(EventFactory.buildRegisterEvent(_DiscoveryNode, Util.getTimestampHexID()));
         }

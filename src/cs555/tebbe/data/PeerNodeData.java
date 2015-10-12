@@ -13,6 +13,16 @@ public class PeerNodeData {
         this.identifier = identifier;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if(object == null || object.getClass() != getClass()) {
+            return false;
+        } else {
+            PeerNodeData other = (PeerNodeData) object;
+            return identifier.equals(other.identifier);
+        }
+    }
+
     public String toString() {
         return "\t" + host_port + "\t" + identifier;
     }

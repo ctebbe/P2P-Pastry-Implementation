@@ -5,6 +5,8 @@ import cs555.tebbe.transport.NodeConnection;
 import cs555.tebbe.util.Util;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ctebbe
@@ -22,8 +24,10 @@ public class JoinResponse implements Event {
     public final String highLeafIdentifier;
 
     public final String[] route;
+    public final List<List<PeerNodeData>> table;
 
-    protected JoinResponse(int protocol, NodeConnection connection, String ID, PeerNodeData lowLeaf, PeerNodeData highLeaf, String[] prevRoute) {
+    protected JoinResponse(int protocol, NodeConnection connection, String ID, PeerNodeData lowLeaf, PeerNodeData highLeaf,
+                           String[] prevRoute, List<List<PeerNodeData>> routingTable) {
         header = new Header(protocol, connection);
 
         this.targetNodeID = ID;
@@ -48,6 +52,8 @@ public class JoinResponse implements Event {
         for(int i=0; i < prevRoute.length; i++)
             route[i] = prevRoute[i];
         route[route.length-1] = Util.removePort(connection.getLocalKey());
+
+        table = routingTable;
     }
 
     protected JoinResponse(byte[] marshalledBytes) throws IOException {
@@ -96,6 +102,30 @@ public class JoinResponse implements Event {
             route[i] = new String(routeBytes);
         }
 
+        // table
+        int numRows = din.readInt(); // table size
+        table = new ArrayList<>();
+        for(int i=0; i < numRows; i++) {
+            int rowSize = din.readInt(); // row size
+            List<PeerNodeData> row = new ArrayList<>();
+            for(int j=0; j < rowSize; j++) {
+                // host port
+                int hLen = din.readInt();
+                byte[] hBytes = new byte[hLen];
+                din.readFully(hBytes);
+                String hostport = new String(hBytes);
+
+                // id
+                int iLen = din.readInt();
+                byte[] iBytes = new byte[iLen];
+                din.readFully(iBytes);
+                String id = new String(iBytes);
+
+                row.add(new PeerNodeData(hostport, id));
+            }
+            table.add(row);
+        }
+
         bais.close();
         din.close();
     }
@@ -139,6 +169,23 @@ public class JoinResponse implements Event {
             byte[] routeBytes = route[i].getBytes();
             dout.writeInt(routeBytes.length);
             dout.write(routeBytes);
+        }
+
+        // table
+        dout.writeInt(table.size()); // table size
+        for(List<PeerNodeData> row : table) {
+            dout.writeInt(row.size()); // row size
+            for(PeerNodeData entry : row) {
+                // host_port
+                byte[] hBytes = entry.host_port.getBytes();
+                dout.writeInt(hBytes.length);
+                dout.write(hBytes);
+
+                // identifier
+                byte[] iBytes = entry.identifier.getBytes();
+                dout.writeInt(iBytes.length);
+                dout.write(iBytes);
+            }
         }
 
         // clean up

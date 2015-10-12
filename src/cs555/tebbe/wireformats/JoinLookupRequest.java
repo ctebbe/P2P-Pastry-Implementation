@@ -16,7 +16,9 @@ public class JoinLookupRequest extends LookupRequest implements Event {
 
     protected JoinLookupRequest(int protocol, NodeConnection connection, String id) {
         super(protocol, connection, id);
-        routingTable = new ArrayList<>();
+        routingTable = new ArrayList<>(4);
+        for(int i=0; i < 4; i++)
+            routingTable.add(new ArrayList<PeerNodeData>());
     }
 
     protected JoinLookupRequest(int protocol, NodeConnection connection, String id, String[] route, List<List<PeerNodeData>> table) {
