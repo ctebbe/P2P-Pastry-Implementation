@@ -20,6 +20,7 @@ public class PeerNode implements Node {
     private TCPServerThread serverThread = null;                                        // listens for incoming nodes
     private Map<String, NodeConnection> connectionsMap = new ConcurrentHashMap<>();     // buffers all current connections for reuse
     private PeerNodeRouteHandler router;                                                // maintains leafset and routing table & related logic
+    private List<String> files = new ArrayList<>();
     private Log logger = new Log();                                                     // logs events and prints diagnostic messages
     private final boolean isCustomID;
 
@@ -50,11 +51,30 @@ public class PeerNode implements Node {
         Scanner keyboard = new Scanner(System.in);
         String input = keyboard.nextLine();
         while(input != null) {
-            if(input.contains("print")) {
+            if(input.contains("state")) {
                 print();
+            } else if(input.contains("exit")) {
+                try {
+                    exitOverlay();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if(input.contains("files")) {
+                System.out.println("Files:");
+                for(String fname : files) {
+                    System.out.println("\t" + fname + "\t" + Util.getFormattedHexID(fname.getBytes()));
+                }
             }
             input = keyboard.nextLine();
         }
+    }
+
+    private void exitOverlay() throws IOException {
+        _DiscoveryNode.sendEvent(EventFactory.buildExitOverlayEvent(_DiscoveryNode, router._Identifier));
+        // migrate files
+
+        // set leafs as each other
+        //NodeConnection lowLeaf = getNodeConnection(router.)
     }
 
     private void print() {
@@ -120,7 +140,6 @@ public class PeerNode implements Node {
         router.updateTable(event.getHeader().getSenderKey(), event.nodeID);
     }
 
-    private List<String> files = new ArrayList<>();
     private void processFileStore(StoreFile event) throws IOException {
         File file = new File(BASE_SAVE_DIR + event.filename);
         FileOutputStream fos = new FileOutputStream(file);
@@ -152,6 +171,13 @@ public class PeerNode implements Node {
             router.setLowLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
         } else {
             router.setHighLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
+        }
+
+        // migrate any files closer to new leaf
+        for(String fname : files) {
+            String fId = Util.getFormattedHexID(fname.getBytes());
+            int dist = Util.getAbsoluteHexDifference(router._Identifier,fId);
+            int distLeaf = Util.getAbsoluteHexDifference(event.nodeID,fId);
         }
     }
 

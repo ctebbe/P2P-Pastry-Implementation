@@ -93,6 +93,11 @@ public class EventFactory {
         return new NodeIDEvent(Protocol.TABLE_UPDATE, connection, id);
     }
 
+    // EXIT OVERLAY
+    public static Event buildExitOverlayEvent(NodeConnection connection, String id) throws IOException {
+        return new NodeIDEvent(Protocol.EXIT_OVERLAY, connection, id);
+    }
+
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(marshalledBytes);
@@ -124,6 +129,8 @@ public class EventFactory {
                 case Protocol.FILE_STORE_COMP:
                     return new NodeIDEvent(marshalledBytes);
                 case Protocol.TABLE_UPDATE:
+                    return new NodeIDEvent(marshalledBytes);
+                case Protocol.EXIT_OVERLAY:
                     return new NodeIDEvent(marshalledBytes);
                 default: return null;
             }
