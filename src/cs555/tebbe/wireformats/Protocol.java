@@ -22,6 +22,8 @@ public class Protocol {
 
     public static final int TABLE_UPDATE            = 111;
 
+    public static final int EXIT                    = 112;
+
     // status codes
     public static final byte NOSTATUS               = (byte) 0x00;
     public static final byte SUCCESS                = (byte) 0x01;

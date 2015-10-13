@@ -11,18 +11,21 @@ public class NodeIDEvent implements Event {
 
     private final Header header;
     public final String nodeID;
+    public final String IP;
     public final boolean lowLeaf;
 
     protected NodeIDEvent(int protocol, NodeConnection connection, String nodeID) {
         header = new Header(protocol, connection);
         this.nodeID = nodeID;
         lowLeaf = false;
+        IP = "";
     }
 
-    protected NodeIDEvent(int protocol, NodeConnection connection, String nodeID, boolean isLow) {
+    protected NodeIDEvent(int protocol, NodeConnection connection, String nodeID, boolean isLow, String ip) {
         header = new Header(protocol, connection);
         this.nodeID = nodeID;
         lowLeaf = isLow;
+        IP = ip;
     }
 
     protected NodeIDEvent(byte[] marshalledBytes) throws IOException {
@@ -36,7 +39,13 @@ public class NodeIDEvent implements Event {
         int ipLen = din.readInt();
         byte[] ipBytes = new byte[ipLen];
         din.readFully(ipBytes);
-        nodeID = new String(ipBytes);
+        IP = new String(ipBytes);
+
+        // node ID
+        int idLen = din.readInt();
+        byte[] idBytes = new byte[idLen];
+        din.readFully(idBytes);
+        nodeID = new String(idBytes);
 
         lowLeaf = din.readBoolean();
 
@@ -53,9 +62,14 @@ public class NodeIDEvent implements Event {
         dout.write(header.getBytes());
 
         // IP
-        byte[] ipBytes = nodeID.getBytes();
+        byte[] ipBytes = IP.getBytes();
         dout.writeInt(ipBytes.length);
         dout.write(ipBytes);
+
+        // ID
+        byte[] idBytes = nodeID.getBytes();
+        dout.writeInt(idBytes.length);
+        dout.write(idBytes);
 
         dout.writeBoolean(lowLeaf);
 

@@ -63,8 +63,47 @@ public class PeerNode implements Node {
                 for(String fname : files) {
                     System.out.println("\t" + fname + "\t" + Util.getDataHexID(fname.getBytes()));
                 }
+            } else if(input.contains("exit")) {
+                try {
+                    exitOverlay();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             input = keyboard.nextLine();
+        }
+    }
+
+    private void exitOverlay() throws IOException {
+        _DiscoveryNode.sendEvent(EventFactory.buildExitOverlayEvent(_DiscoveryNode, router._Identifier));
+
+        // swap leafs
+        NodeConnection lowLeaf = getNodeConnection(router.getLowLeaf().host_port);
+        lowLeaf.sendEvent(EventFactory.buildLeafsetUpdateEvent(lowLeaf, router.getHighLeaf(), false));
+
+        NodeConnection highLeaf = getNodeConnection(router.getHighLeaf().host_port);
+        highLeaf.sendEvent(EventFactory.buildLeafsetUpdateEvent(highLeaf, router.getLowLeaf(), true));
+
+        // migrate files
+        for(String fname : files) {
+            String fId = Util.getDataHexID(fname.getBytes());
+            int distLow = Util.getAbsoluteHexDifference(router.getLowLeaf().identifier, fId);
+            int distHigh = Util.getAbsoluteHexDifference(router.getHighLeaf().identifier, fId);
+
+            File fToMigrate = new File(BASE_SAVE_DIR + fname);
+            NodeConnection connection;
+            if(distLow < distHigh) {
+                connection = getNodeConnection(router.getLowLeaf().host_port);
+            } else if(distHigh < distLow) {
+                connection = getNodeConnection(router.getHighLeaf().host_port);
+            } else {
+                if(Util.getHexDifference(router.getLowLeaf().identifier, router.getHighLeaf().identifier) > 0)
+                   connection = getNodeConnection(router.getLowLeaf().host_port);
+                else
+                   connection = getNodeConnection(router.getHighLeaf().host_port);
+            }
+            connection.sendEvent(EventFactory.buildFileStoreEvent(connection, fToMigrate.getName(), Files.readAllBytes(fToMigrate.toPath())));
+            logger.printDiagnostic(fToMigrate);
         }
     }
 
@@ -165,10 +204,11 @@ public class PeerNode implements Node {
     }
 
     private void processLeafsetUpdate(NodeIDEvent event) throws IOException {
+        String ip = event.IP.isEmpty() ? event.getHeader().getSenderKey() : event.IP;
         if(event.lowLeaf) {
-            router.setLowLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
+            router.setLowLeaf(new PeerNodeData(ip, event.nodeID));
         } else {
-            router.setHighLeaf(new PeerNodeData(event.getHeader().getSenderKey(), event.nodeID));
+            router.setHighLeaf(new PeerNodeData(ip, event.nodeID));
         }
 
         // migrate any suitable files to new leaf

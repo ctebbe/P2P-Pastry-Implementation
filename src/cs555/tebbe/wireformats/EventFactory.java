@@ -60,8 +60,12 @@ public class EventFactory {
     }
 
     // LEAF SET UPDATE
-    public static Event buildLeafsetUpdateEvent(NodeConnection connection, String IP, boolean lowLeaf) throws IOException {
-        return new NodeIDEvent(Protocol.LEAFSET_UPDATE, connection, IP, lowLeaf);
+    public static Event buildLeafsetUpdateEvent(NodeConnection connection, String ID, boolean lowLeaf) throws IOException {
+        return new NodeIDEvent(Protocol.LEAFSET_UPDATE, connection, ID, lowLeaf,"");
+    }
+
+    public static Event buildLeafsetUpdateEvent(NodeConnection connection, PeerNodeData leaf, boolean lowLeaf) throws IOException {
+        return new NodeIDEvent(Protocol.LEAFSET_UPDATE, connection, leaf.identifier, lowLeaf, leaf.host_port);
     }
 
     // FILE STORE REQ
@@ -91,6 +95,11 @@ public class EventFactory {
     // ROUTE TABLE UPDATE
     public static Event buildRouteTableUpdateEvent(NodeConnection connection, String id) throws IOException {
         return new NodeIDEvent(Protocol.TABLE_UPDATE, connection, id);
+    }
+
+    // EXIT OVERLAY
+    public static Event buildExitOverlayEvent(NodeConnection connection, String id) throws IOException {
+        return new NodeIDEvent(Protocol.EXIT, connection, id);
     }
 
     public static Event buildEvent(byte[] marshalledBytes) throws IOException {
@@ -124,6 +133,8 @@ public class EventFactory {
                 case Protocol.FILE_STORE_COMP:
                     return new NodeIDEvent(marshalledBytes);
                 case Protocol.TABLE_UPDATE:
+                    return new NodeIDEvent(marshalledBytes);
+                case Protocol.EXIT:
                     return new NodeIDEvent(marshalledBytes);
                 default: return null;
             }

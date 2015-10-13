@@ -79,9 +79,16 @@ public class DiscoveryNode implements Node {
                     e.printStackTrace();
                 }
                 break;
+            case Protocol.EXIT:
+                processExit((NodeIDEvent) event);
             default:
                 display("unknown event type:"+event.getType());
         }
+    }
+
+    private void processExit(NodeIDEvent event) {
+        peerMap.remove(event.getHeader().getSenderKey());
+        identifierSet.remove(event.nodeID);
     }
 
     private void processJoinComplete(NodeIDEvent event) throws IOException {
