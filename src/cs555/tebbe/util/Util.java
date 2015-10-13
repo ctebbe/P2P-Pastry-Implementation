@@ -40,20 +40,6 @@ public class Util {
         return strBuf.toString();
     }
 
-    public static byte[] convertHexToBytes(String hexString) {
-        int size = hexString.length();
-        byte[] buf = new byte[size / 2];
-        int j = 0;
-        for (int i = 0; i < size; i++) {
-            String a = hexString.substring(i, i + 2);
-            int valA = Integer.parseInt(a, 16);
-            i++;
-            buf[j] = (byte) valA;
-            j++;
-        }
-        return buf;
-    }
-
     // strips away the port in the key format host:port
     public static String removePort(String key) {
         if(!key.contains(":")) return key;
@@ -66,6 +52,7 @@ public class Util {
     }
 
     public static int generateRandomNumber(int min, int max) {
+        max = max-1;
         return (int)(Math.random() * ((max-min) + 1) + min);
     }
 

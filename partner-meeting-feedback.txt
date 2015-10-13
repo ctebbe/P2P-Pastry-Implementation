@@ -1,0 +1,12 @@
+from Priyank:
+
+These are the things we discussed.
+1. Initialize a peer node completely and then only return it as a random node.
+2. Display nicknames/IP+nicknames instead of just IP addresses for easier navigation.
+3. Remove peer-node gracefully.
+
+from Caleb:
+
+The main points we discussed were around diagnostics for the DataStore program. Mainly:
+1. Remember to use file names to identify files and not just hex IDs.
+2. Routing a message (and not the entire file) to the target node and printing its route path.

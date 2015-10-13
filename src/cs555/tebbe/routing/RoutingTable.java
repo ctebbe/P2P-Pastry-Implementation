@@ -3,10 +3,7 @@ package cs555.tebbe.routing;
 import cs555.tebbe.data.PeerNodeData;
 import cs555.tebbe.util.Util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ctebbe
@@ -23,14 +20,22 @@ public class RoutingTable {
     }
 
     public void updateTable(PeerNodeData newData) {
-        List<PeerNodeData> row = table.get(getRowIndex(newData.identifier));
-        if(!row.contains(newData))
+        int rowIndex = getRowIndex(newData.identifier);
+        List<PeerNodeData> row = table.get(rowIndex);
+        if(!row.contains(newData)) {
+            Iterator<PeerNodeData> rowIter = row.iterator();
+            while(rowIter.hasNext()) {
+                PeerNodeData entry = rowIter.next();
+                if(entry.identifier.charAt(rowIndex) == newData.identifier.charAt(rowIndex))
+                    rowIter.remove();
+            }
             row.add(newData);
+        }
     }
 
     public PeerNodeData findClosestEntry(String queryID) {
         PeerNodeData closest = null;
-        for(int i=3; i >= 0; i--) { // work backwards up the table and find closest node
+        for(int i=3; i >= 0; i--) {
             for(PeerNodeData entry : table.get(i)) {
                 if(closest == null) {
                     closest = entry;
@@ -88,5 +93,15 @@ public class RoutingTable {
             }
         }
         return null;
+    }
+
+    public List<PeerNodeData> getAll() {
+        List<PeerNodeData> all = new ArrayList<>();
+        for(List<PeerNodeData> row : table) {
+            for(PeerNodeData entry : row) {
+                all.add(entry);
+            }
+        }
+        return all;
     }
 }

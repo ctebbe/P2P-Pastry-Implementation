@@ -106,7 +106,6 @@ public class DiscoveryNode implements Node {
     private String joiningNodeKey;
     private void processRegisterRequest(RegisterRequest event) throws IOException {
         if(isNodeJoining && !event.getHeader().getSenderKey().equals(joiningNodeKey)) {
-            //System.out.println("caching req from:"+event.getHeader().getSenderKey());
             reqQueue.add(event);
             return;
         }
@@ -123,11 +122,10 @@ public class DiscoveryNode implements Node {
         connection.sendEvent(EventFactory.buildRegisterResponseEvent(connection, event.getNodeIDRequest(), success, getRandomPeerNode()));
     }
 
-    private static final Random random = new Random();
     private String getRandomPeerNode() {
         if(peerMap.size() > 0) {
             List<String> keys = new ArrayList(peerMap.keySet());
-            String randKey = keys.get(random.nextInt(keys.size()));
+            String randKey = keys.get(Util.generateRandomNumber(0, keys.size()));
             return Util.removePort(peerMap.get(randKey).host_port);
         }
         return "";

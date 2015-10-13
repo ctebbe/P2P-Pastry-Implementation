@@ -106,4 +106,8 @@ public class PeerNodeRouteHandler {
             }
         }
     }
+
+    public List<PeerNodeData> getAllEntries() {
+        return table.getAll();
+    }
 }
