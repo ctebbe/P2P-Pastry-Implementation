@@ -21,8 +21,6 @@ public class DiscoveryNode implements Node {
     private ConcurrentHashMap<String, PeerNodeData> peerMap    = null;    // registered peer nodes
     private Set<String> identifierSet = new HashSet<>();
 
-    //private ConcurrentHashMap<String, LiveChunkNodeData> chunkNodeMap = null;       // holds registered chunk nodes
-
     public DiscoveryNode(int port) {
         try {
             bufferMap = new ConcurrentHashMap<>();
@@ -81,12 +79,14 @@ public class DiscoveryNode implements Node {
                 break;
             case Protocol.EXIT:
                 processExit((NodeIDEvent) event);
+                break;
             default:
                 display("unknown event type:"+event.getType());
         }
     }
 
     private void processExit(NodeIDEvent event) {
+        System.out.println("Node exiting overlay:\t" + event.getHeader().getSenderKey() + "\t" + event.nodeID);
         peerMap.remove(event.getHeader().getSenderKey());
         identifierSet.remove(event.nodeID);
     }
